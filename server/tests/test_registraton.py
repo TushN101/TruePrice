@@ -1,0 +1,8 @@
+
+
+"""
+
+Tests registration
+
+
+"""
