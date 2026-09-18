@@ -1,80 +1,47 @@
 
 
-from flask import Flask
-from flask import request
-from flask import jsonify
-from flask import make_response
 
-from flask_jwt_extended import create_access_token
+from flask import Flask, jsonify, make_response, request
+from flask_jwt_extended import (
+    JWTManager,
+    get_jwt_identity,
+    jwt_required,
+)
+from util.clientRegister import createUser
+from util.dataHandler import processData
+import secrets
 
-
-import pymongo
-import uuid
-from datetime import datetime , timezone
-
-from .util.ipValidator import validateIp
 
 app = Flask(__name__)
-mongoClient = pymongo.MongoClient("mongodb://localhost:27017/")
-truePriceDb = mongoClient["mydatabase"]
-
-myClients = truePriceDb["clients"]
-
+app.config["JWT_SECRET_KEY"] = secrets.token_hex(32)
+jwt = JWTManager(app)
 
 @app.route('/')
 def index():
     return "Hello World",200
 
-@app.route('/api/registerUser' , methods=["POST"])
-def registerUser():
-    data = request.get_json()
-    ipAddress = data.get('ipAddress')
-    country = data.get('country')
-    response = {}
-
-    # -- wrong registration --
-    if not ipAddress:
-        response["status"] = "error"
-        response["message"] = "IP address not found in the post data"
-        return jsonify(response), 400
-    elif not country:
-        response["status"] = "error"
-        response["message"] = "Country not found in the post data"
-        return jsonify(response), 400
-    elif not validateIp(ipAddress):
-        response["status"] = "error"
-        response["message"] = "Invalid IP address found in the post data"
-        return jsonify(response), 400
-
-    # -- correct registration --
+@app.route('/api/registerClient' , methods=["POST"])
+def registerClient():
+    ipAddress = str(request.remote_addr)
+    response = createUser(ipAddress)
+    if response["status"] == "error":
+        return jsonify(response),400
     else:
-        user_id = str(uuid.uuid4())
+        response_obj = make_response(jsonify(response))
+        response_obj.set_cookie('access_token', response["access_token"], max_age=60*60*24*30)
+        return response_obj,200
 
-        # Insert client into database
-        try:
-            client_data = {
-                "_id": user_id,
-                "ipAddress": ipAddress,
-                "country": country,
-                "createdAt": datetime.now(timezone.utc)
-            }
-            myClients.insert_one(client_data)
-
-            # Create response with UUID as cookie
-            access_token = create_access_token(identity=user_id)
-            response_obj = make_response(jsonify({
-                "status": "success",
-                "message": "Client registered successfully",
-                "access_token": access_token
-            }))
-            response_obj.set_cookie('access_token', access_token, max_age=60*60*24*30)
-            return response_obj
-        except Exception as e:
-            print(e)
-            response["status"] = "error"
-            response["message"] = "Internal Database Error occured"
-            return jsonify(response), 400
-
+@app.route('/api/postData' , methods=["POST"])
+@jwt_required()
+def postData():
+    clientId = get_jwt_identity()
+    clientIp = request.remote_addr
+    postData = request.get_json()
+    response = processData(postData , clientId , clientIp)
+    if response["status"] == "error":
+        return jsonify(response),400
+    else:
+        return response,200
 
 
 if __name__ == '__main__':
