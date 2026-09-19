@@ -8,7 +8,8 @@ from flask_jwt_extended import (
     jwt_required,
 )
 from util.clientRegister import createUser
-from util.dataHandler import processData
+from util.postHandler import processData
+from util.fetchHandler import fetchData
 import secrets
 
 
@@ -20,7 +21,7 @@ jwt = JWTManager(app)
 def index():
     return "Hello World",200
 
-@app.route('/api/registerClient' , methods=["POST"])
+@app.route('/api/registerClient',methods=["POST"])
 def registerClient():
     ipAddress = str(request.remote_addr)
     response = createUser(ipAddress)
@@ -37,12 +38,23 @@ def postData():
     clientId = get_jwt_identity()
     clientIp = request.remote_addr
     postData = request.get_json()
-    response = processData(postData , clientId , clientIp)
+    response = processData(postData , clientId)
     if response["status"] == "error":
         return jsonify(response),400
     else:
-        return response,200
+        return jsonify(response),200
 
+@app.route('/api/getData' , methods=["POST"])
+@jwt_required()
+def getData():
+    clientId = get_jwt_identity()
+    clientIp = request.remote_addr
+    postData = request.get_json()
+    response = fetchData(postData , clientId)
+    if response["status"] == "error":
+        return jsonify(response),400
+    else:
+        return jsonify(response),200
 
 if __name__ == '__main__':
     app.run(debug=True,host="0.0.0.0",port=5000)

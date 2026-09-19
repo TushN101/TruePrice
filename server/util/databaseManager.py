@@ -2,7 +2,7 @@
 from pymongo import MongoClient
 
 mongoClient = MongoClient("mongodb://localhost:27017/")
-truePriceDb = mongoClient["mydatabase"]
+truePriceDb = mongoClient["truePriceDb"]
 
-myClients = truePriceDb["myClients"]
-myData = truePriceDb["myData"]
+myClients = truePriceDb["truePriceClients"]
+myData = truePriceDb["truePriceData"]
