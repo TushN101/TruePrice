@@ -11,7 +11,8 @@ def fetchData(postData , clientId):
         response["message"] =  "Missing itemKey paramter"
         return response
 
-    items = list[myData.find({"itemKey":f"{itemKey}"}).sort("itemTime",1)]
+    cursor = myData.find({"itemKey": f"{itemKey}"}).sort("itemTime", 1)
+    items = [{"itemValue": doc["itemValue"], "itemTime": doc["itemTime"]} for doc in cursor]
 
     if not items:
         response["status"] = "missing"
@@ -19,6 +20,6 @@ def fetchData(postData , clientId):
         return response
 
     else:
-
-
-    pass
+        response["status"] = "sucess"
+        response["message"] = items
+        return response

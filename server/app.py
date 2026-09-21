@@ -1,11 +1,9 @@
-
-
-
 from flask import Flask, jsonify, make_response, request
 from flask_jwt_extended import (
     JWTManager,
     get_jwt_identity,
     jwt_required,
+    create_refresh_token,
 )
 from util.clientRegister import createUser
 from util.postHandler import processData
@@ -28,6 +26,9 @@ def registerClient():
     if response["status"] == "error":
         return jsonify(response),400
     else:
+        # Generate refresh token
+        refresh_token = create_refresh_token(identity=response["clientId"])
+        response["refresh_token"] = refresh_token
         response_obj = make_response(jsonify(response))
         response_obj.set_cookie('access_token', response["access_token"], max_age=60*60*24*30)
         return response_obj,200
@@ -39,6 +40,10 @@ def postData():
     clientIp = request.remote_addr
     postData = request.get_json()
     response = processData(postData , clientId)
+
+    refresh_token = create_refresh_token(identity=clientId)
+    response["refresh_token"] = refresh_token
+
     if response["status"] == "error":
         return jsonify(response),400
     else:
@@ -51,8 +56,14 @@ def getData():
     clientIp = request.remote_addr
     postData = request.get_json()
     response = fetchData(postData , clientId)
+
+    refresh_token = create_refresh_token(identity=clientId)
+    response["refresh_token"] = refresh_token
+
     if response["status"] == "error":
         return jsonify(response),400
+    elif response["status"] == "missing":
+        return jsonify(response),204
     else:
         return jsonify(response),200
 

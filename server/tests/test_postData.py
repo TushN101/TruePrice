@@ -1,4 +1,3 @@
-
 import pytest
 
 def test_postData_success(myApp):
@@ -21,8 +20,10 @@ def test_postData_success(myApp):
                           headers=headers)
 
     assert response.status_code == 200
-    assert response.get_json()['status'] == 'success'
-    assert response.get_json()['message'] == 'Frame ingested successfully'
+    data = response.get_json()
+    assert data['status'] == 'success'
+    assert data['message'] == 'Frame ingested successfully'
+    assert "refresh_token" in data  # New check for refresh token
 
 def test_postData_invalid_details(myApp):
     """
@@ -46,8 +47,10 @@ def test_postData_invalid_details(myApp):
                           headers=headers)
 
     assert response.status_code == 400
-    assert response.get_json()['status'] == 'error'
-    assert "Missing paramters" in response.get_json()['message']
+    data = response.get_json()
+    assert data['status'] == 'error'
+    assert "Missing paramters" in data['message']
+    assert "refresh_token" in data  # Refresh token should be present even on error as per app.py
 
 def test_postData_invalid_token(myApp):
     """

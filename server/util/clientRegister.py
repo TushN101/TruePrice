@@ -30,6 +30,7 @@ def createUser(ipAddress):
             access_token = create_access_token(identity=user_id)
             response["status"] =  "success"
             response["message"] =  "Client registered successfully"
+            response["clientId"] = user_id
             response["access_token"] =  access_token
         except Exception as e:
             print(e)
