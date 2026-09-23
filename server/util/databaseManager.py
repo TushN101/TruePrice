@@ -11,3 +11,4 @@ mongoClient = MongoClient(
 truePriceDb = mongoClient["truePriceDb"]
 myClients = truePriceDb["truePriceClients"]
 myData = truePriceDb["truePriceData"]
+myObservation = truePriceDb["truePriceObservation"]
