@@ -1,163 +1,242 @@
-function getASIN() {
+console.log("[TruePrice] Content script loaded on:", window.location.href);
+
+// content.js — eBay product-page extraction.
+//
+// Runs on eBay item pages. Extracts:
+//   - itemId   (eBay numeric item ID from the URL)
+//   - title    (product title from the DOM)
+//   - price    (current displayed price)
+//   - url      (canonical product URL)
+//
+// Sends one observation per item per hour to the background worker.
+//
+// DEBUGGING: Open the browser console (F12) on an eBay product page
+// and look for lines prefixed with "[TruePrice]".
+
+// ─── Extraction helpers ────────────────────────────────────────────────
+
+function getItemId() {
     const href = window.location.href;
-    // Common URL patterns on Amazon product pages.
-    const match =
-        href.match(/\/dp\/([a-zA-Z0-9]{10})/i) ||
-        href.match(/\/gp\/product\/([a-zA-Z0-9]{10})/i) ||
-        href.match(/\/ASIN\/([a-zA-Z0-9]{10})/i) ||
-        href.match(/\/product\/([a-zA-Z0-9]{10})/i) ||
-        href.match(/\/o\/([a-zA-Z0-9]{10})/i);
-
-    if (match) return match[1].toUpperCase();
-
-    // Common places the ASIN appears in the DOM.
-    const fromHiddenInput =
-        document.querySelector('#ASIN')?.value ||
-        document.querySelector('input[name="ASIN"]')?.value;
-    if (fromHiddenInput) return String(fromHiddenInput).toUpperCase();
-
-    const fromMeta = document.querySelector('meta[itemprop="sku"]')?.getAttribute('content');
-    if (fromMeta) return String(fromMeta).toUpperCase();
-
-    const fromDataAsin = document.querySelector('[data-asin]')?.getAttribute('data-asin');
-    if (fromDataAsin) return String(fromDataAsin).toUpperCase();
-
+    // eBay URLs: /itm/<ID> or /itm/<slug>/<ID>
+    // Match the first 6+ digit number after /itm/
+    const m = href.match(/\/itm\/(?:[^/?#]+\/)?(\d{6,})/i);
+    if (m) {
+        return m[1];
+    }
+    console.warn("[TruePrice] Could not extract item ID from URL:", href);
     return null;
 }
 
-function getAmazonPrice() {
-    const priceElement = document.querySelector('.a-price-whole');
-    return priceElement ? priceElement.innerText.replace(/[^\d]/g, '') : null;
+function getProductTitle() {
+    const el =
+        document.querySelector("h1.x-item-title__mainTitle") ||
+        document.querySelector("#itemTitle") ||
+        document.querySelector("h1[itemprop='name']") ||
+        document.querySelector("h1.ux-textspans");
+    if (!el) return null;
+    return el.textContent.replace(/\s+/g, " ").trim() || null;
 }
 
-function getProductSlugFromUrl() {
-    const href = window.location.href;
-    // For URLs like: /Dell-i5-1334U-.../dp/B0D2Y1BLDT
-    const match =
-        href.match(/\/([^/?#]+)\/dp\/[a-zA-Z0-9]{10}/i) ||
-        href.match(/\/([^/?#]+)\/gp\/product\/[a-zA-Z0-9]{10}/i);
+function getPrice() {
+    // Try multiple selectors in priority order.
+    // eBay changes their DOM occasionally so we cast a wide net.
+    const selectors = [
+        "div.x-price-primary",
+        ".x-price-primary",
+        "#prcIsum",
+        "span#prcIsum",
+        "div#prcIsum",
+        ".ux-price span",
+        "[itemprop='price']",
+        "meta[itemprop='price']",
+        ".x-price-approx__price",
+        ".displayprice",
+    ];
 
-    if (!match) return null;
-    try {
-        return decodeURIComponent(match[1]);
-    } catch (e) {
-        return match[1];
-    }
-}
-
-function getProductTitleFromDom() {
-    const titleEl = document.querySelector('#productTitle');
-    const title = titleEl ? titleEl.textContent : null;
-    return title ? String(title).replace(/\s+/g, ' ').trim() : null;
-}
-
-function upsertAsin(uid) {
-    if (!uid) return;
-
-    chrome.storage.local.get(["asins"], (result) => {
-        const asins = result.asins || [];
-        if (asins.includes(uid)) return;
-        asins.push(uid);
-        chrome.storage.local.set({ asins });
-    });
-}
-
-function upsertProductName(uid, name) {
-    if (!uid || !name) return;
-    chrome.storage.local.get(["productNames"], (result) => {
-        const productNames = result.productNames || {};
-        if (productNames[uid]) return;
-        productNames[uid] = name;
-        chrome.storage.local.set({ productNames });
-    });
-}
-
-function sendPrice(uid, price) {
-    if (!uid || !price) return;
-    chrome.runtime.sendMessage({
-        type: "SAVE_PRICE",
-        data: {
-            uid,
-            timestamp: new Date().toISOString(),
-            price
+    for (const sel of selectors) {
+        const el = document.querySelector(sel);
+        if (!el) continue;
+        const raw = (el.tagName === "META")
+            ? el.getAttribute("content")
+            : el.textContent;
+        if (!raw) continue;
+        const num = parsePriceText(raw);
+        if (num != null) {
+            console.log("[TruePrice] Found price:", num, "via selector:", sel);
+            return num;
         }
-    });
+    }
+
+    console.warn("[TruePrice] Could not find price element on page.");
+    return null;
 }
 
-function shouldSendPrice(uid, price) {
-    const dayKey = new Date().toISOString().slice(0, 10);
-    const key = `lastSent_${uid}`;
+function parsePriceText(text) {
+    if (!text) return null;
+    const cleaned = String(text).replace(/[^\d.]/g, "");
+    if (!cleaned) return null;
+    // Handle multiple dots — keep only the first.
+    const parts = cleaned.split(".");
+    if (parts.length > 2) {
+        return parseFloat(parts[0] + "." + parts.slice(1).join(""));
+    }
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? null : n;
+}
+
+function canonicalUrl(itemId) {
+    if (!itemId) return null;
+    return "https://www.ebay.com/itm/" + itemId;
+}
+
+// ─── Throttle: one observation per item per hour ───────────────────────
+// The throttle key is set ONLY after a successful send, so a failed
+// first attempt will be retried on the next poll tick.
+
+function checkThrottle(itemId, price) {
+    const hourKey = new Date().toISOString().slice(0, 13); // YYYY-MM-DDTHH
+    const key = "lastSent_" + itemId;
     return new Promise((resolve) => {
         chrome.storage.local.get([key], (result) => {
             const prev = result[key];
-            if (prev && prev.dayKey === dayKey && String(prev.price) === String(price)) {
+            if (prev && prev.hourKey === hourKey && String(prev.price) === String(price)) {
+                console.log("[TruePrice] Throttled: already sent this hour for item", itemId);
                 resolve(false);
                 return;
             }
-            chrome.storage.local.set({ [key]: { dayKey, price } }, () => resolve(true));
+            resolve(true);
         });
     });
 }
 
-function startTracking() {
-    let asinSaved = false;
-    let priceSent = false;
-    let nameSaved = false;
-    let lastUid = null;
+function setThrottle(itemId, price) {
+    const hourKey = new Date().toISOString().slice(0, 13);
+    const key = "lastSent_" + itemId;
+    chrome.storage.local.set({ [key]: { hourKey, price } });
+}
 
-    const MAX_ATTEMPTS = 20; // ~10s (500ms interval)
-    const INTERVAL_MS = 500;
+// ─── Local tracking (for the dashboard) ────────────────────────────────
 
-    const tick = () => {
-        const uid = getASIN();
-        const price = getAmazonPrice();
+function upsertItemId(itemId) {
+    if (!itemId) return;
+    chrome.storage.local.get(["itemIds"], (result) => {
+        const ids = result.itemIds || [];
+        if (ids.includes(itemId)) return;
+        ids.push(itemId);
+        chrome.storage.local.set({ itemIds: ids });
+    });
+}
 
-        // If navigation changes (or ASIN couldn't be read initially), reset flags.
-        if (uid && uid !== lastUid) {
-            lastUid = uid;
-            asinSaved = false;
-            priceSent = false;
-            nameSaved = false;
-        }
+function upsertProductName(itemId, name) {
+    if (!itemId || !name) return;
+    chrome.storage.local.get(["productNames"], (result) => {
+        const names = result.productNames || {};
+        if (names[itemId]) return;
+        names[itemId] = name;
+        chrome.storage.local.set({ productNames: names });
+    });
+}
 
-        if (uid && !asinSaved) {
-            asinSaved = true;
-            upsertAsin(uid);
-        }
+// ─── Send observation via the background service worker ────────────────
 
-        if (uid && !nameSaved) {
-            nameSaved = true;
-            const domTitle = getProductTitleFromDom();
-            const slug = getProductSlugFromUrl();
-            // Prefer real product title when available; fall back to URL slug.
-            upsertProductName(uid, domTitle || slug || uid);
-        }
-
-        // Only send price when both ASIN + price are available.
-        if (uid && price && !priceSent) {
-            shouldSendPrice(uid, price).then((ok) => {
-                if (!ok) {
-                    priceSent = true;
+function sendObservation(payload) {
+    return new Promise((resolve) => {
+        console.log("[TruePrice] Sending observation to background:", payload);
+        chrome.runtime.sendMessage(
+            { type: "SAVE_OBSERVATION", data: payload },
+            (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error("[TruePrice] Runtime error:", chrome.runtime.lastError.message);
+                    resolve(false);
                     return;
                 }
+                if (response && response.status === "success") {
+                    console.log("[TruePrice] OK - Observation stored by backend");
+                    resolve(true);
+                } else {
+                    console.error("[TruePrice] FAIL - Observation failed:", response);
+                    resolve(false);
+                }
+            },
+        );
+    });
+}
+
+// ─── Main polling loop ─────────────────────────────────────────────────
+
+function startTracking() {
+    console.log("[TruePrice] Starting price tracking...");
+
+    let savedItemId = false;
+    let savedName = false;
+    let priceSent = false;
+    let lastItemId = null;
+
+    const MAX_ATTEMPTS = 60;   // ~30s at 500ms
+    const INTERVAL_MS = 500;
+
+    let attempts = 0;
+
+    const poll = async () => {
+        attempts++;
+        const itemId = getItemId();
+        const price = getPrice();
+
+        // Reset flags if item changed (SPA navigation).
+        if (itemId && itemId !== lastItemId) {
+            console.log("[TruePrice] Item detected:", itemId);
+            lastItemId = itemId;
+            savedItemId = false;
+            savedName = false;
+            priceSent = false;
+        }
+
+        if (itemId && !savedItemId) {
+            savedItemId = true;
+            upsertItemId(itemId);
+        }
+
+        if (itemId && !savedName) {
+            savedName = true;
+            const title = getProductTitle();
+            upsertProductName(itemId, title || itemId);
+        }
+
+        if (itemId && price != null && !priceSent) {
+            const shouldSend = await checkThrottle(itemId, price);
+            if (!shouldSend) {
                 priceSent = true;
-                sendPrice(uid, price);
+                return; // done — throttled
+            }
+
+            const success = await sendObservation({
+                productId: itemId,
+                price: price,
+                currency: "USD",
+                url: canonicalUrl(itemId),
+                title: getProductTitle(),
             });
+
+            if (success) {
+                priceSent = true;
+                setThrottle(itemId, price);
+            }
+            // If failed, DON'T set priceSent — allow retry on next tick.
+        }
+
+        if (!priceSent && attempts < MAX_ATTEMPTS) {
+            setTimeout(poll, INTERVAL_MS);
+        } else if (!priceSent) {
+            console.warn(
+                "[TruePrice] Gave up after", MAX_ATTEMPTS,
+                "attempts. Item:", lastItemId,
+                " — Check: (1) backend running at the configured URL,",
+                "(2) extension registered, (3) eBay page fully loaded.",
+            );
         }
     };
 
-    let attempts = 0;
-    const intervalId = setInterval(() => {
-        attempts += 1;
-        tick();
-
-        if (priceSent || attempts >= MAX_ATTEMPTS) {
-            clearInterval(intervalId);
-        }
-    }, INTERVAL_MS);
-
-    // Run once immediately so fast-rendering pages work without delay.
-    tick();
+    poll(); // start immediately
 }
 
 startTracking();

@@ -1,77 +1,82 @@
-import pytest
+"""Tests for the observation ingestion endpoint."""
 
-def test_postData_success(myApp):
-    """
-    1. Check if the valid token + valid details works
-    """
-    register_response = myApp.post('/api/registerClient')
-    assert register_response.status_code == 200
-    token = register_response.get_json().get('access_token')
-    assert token is not None
-    headers = {
-        'Authorization': f'Bearer {token}'
-    }
+
+def _register(myApp):
+    resp = myApp.post("/api/registerClient")
+    return resp.get_json()["accessToken"]
+
+
+def test_post_observation_success(myApp):
+    """Valid token + valid payload → observation stored."""
+    token = _register(myApp)
+    headers = {"Authorization": f"Bearer {token}"}
     payload = {
-        "itemKey": "laptop",
-        "itemValue": 1200
+        "productId": "123456789",
+        "price": 201.50,
+        "currency": "USD",
+        "url": "https://www.ebay.com/itm/123456789",
+        "title": "Test Product",
     }
-    response = myApp.post('/api/postData',
-                          json=payload,
-                          headers=headers)
+    resp = myApp.post("/api/observations", json=payload, headers=headers)
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["status"] == "success"
+    assert "refreshToken" in data
 
-    assert response.status_code == 200
-    data = response.get_json()
-    assert data['status'] == 'success'
-    assert data['message'] == 'Frame ingested successfully'
-    assert "refresh_token" in data  # New check for refresh token
 
-def test_postData_invalid_details(myApp):
-    """
-    2. Check if valid token + invalid or badly formatted details returns error
-    """
-    # Get a valid token from the registerClient
-    register_response = myApp.post('/api/registerClient')
-    token = register_response.get_json().get('access_token')
+def test_post_observation_missing_fields(myApp):
+    """Missing required fields → 400."""
+    token = _register(myApp)
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = myApp.post(
+        "/api/observations",
+        json={"productId": "123456789"},  # missing price
+        headers=headers,
+    )
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert data["status"] == "error"
+    assert "Missing required fields" in data["message"]
 
-    headers = {
-        'Authorization': f'Bearer {token}'
-    }
 
-    # Missing 'itemValue'
-    payload = {
-        "itemKey": "laptop"
-    }
+def test_post_observation_non_numeric_price(myApp):
+    """Non-numeric price → 400."""
+    token = _register(myApp)
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = myApp.post(
+        "/api/observations",
+        json={"productId": "123456789", "price": "not-a-number"},
+        headers=headers,
+    )
+    assert resp.status_code == 400
+    assert "numeric" in resp.get_json()["message"]
 
-    response = myApp.post('/api/postData',
-                          json=payload,
-                          headers=headers)
 
-    assert response.status_code == 400
-    data = response.get_json()
-    assert data['status'] == 'error'
-    assert "Missing paramters" in data['message']
-    assert "refresh_token" in data  # Refresh token should be present even on error as per app.py
+def test_post_observation_string_price_coerced(myApp):
+    """A numeric string price is accepted (coerced to float)."""
+    token = _register(myApp)
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = myApp.post(
+        "/api/observations",
+        json={"productId": "123456789", "price": "201"},
+        headers=headers,
+    )
+    assert resp.status_code == 200
 
-def test_postData_invalid_token(myApp):
-    """
-    3. Check if invalid token gets rejected or no
-    """
-    payload = {
-        "itemKey": "laptop",
-        "itemValue": 1200
-    }
 
-    # Case 1: No token
-    response = myApp.post('/api/postData',
-                          json=payload)
-    assert response.status_code == 401
+def test_duplicate_observation_accepted(myApp):
+    """Repeated observations from the same client are all stored (dedup
+    happens at computation time, not ingestion time)."""
+    token = _register(myApp)
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {"productId": "123456789", "price": 201}
 
-    # Case 2: Invalid/Malformed token
-    headers = {
-        'Authorization': 'Bearer definitely-not-a-token'
-    }
-    response = myApp.post('/api/postData',
-                          json=payload,
-                          headers=headers)
-    # Flask-JWT-Extended usually returns 422 for malformed tokens
-    assert response.status_code in [401, 422]
+    r1 = myApp.post("/api/observations", json=payload, headers=headers)
+    r2 = myApp.post("/api/observations", json=payload, headers=headers)
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+
+    # Verify two observations were stored.
+    from util.databaseManager import observations
+    count = observations().count_documents({"productId": "123456789"})
+    assert count == 2

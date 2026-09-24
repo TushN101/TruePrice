@@ -5,335 +5,301 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TruePrice</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="chart.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --background: oklch(1.0000 0 0);
-      --foreground: oklch(0.2101 0.0318 264.6645);
-      --card: oklch(1.0000 0 0);
-      --card-foreground: oklch(0.2101 0.0318 264.6645);
-      --popover: oklch(1.0000 0 0);
-      --popover-foreground: oklch(0.2101 0.0318 264.6645);
-      --primary: oklch(0.6716 0.1368 48.5130);
-      --primary-foreground: oklch(1.0000 0 0);
-      --secondary: oklch(0.5360 0.0398 196.0280);
-      --secondary-foreground: oklch(1.0000 0 0);
-      --muted: oklch(0.9670 0.0029 264.5419);
-      --muted-foreground: oklch(0.5510 0.0234 264.3637);
-      --accent: oklch(0.9491 0 0);
-      --accent-foreground: oklch(0.2101 0.0318 264.6645);
-      --destructive: oklch(0.6368 0.2078 25.3313);
-      --destructive-foreground: oklch(0.9851 0 0);
-      --border: oklch(0.9276 0.0058 264.5313);
-      --input: oklch(0.9276 0.0058 264.5313);
-      --ring: oklch(0.6716 0.1368 48.5130);
-      --chart-1: oklch(0.5940 0.0443 196.0233);
-      --chart-2: oklch(0.7214 0.1337 49.9802);
-      --chart-3: oklch(0.8721 0.0864 68.5474);
-      --chart-4: oklch(0.6268 0 0);
-      --chart-5: oklch(0.6830 0 0);
-      --font-sans: "JetBrains Mono", ui-monospace, monospace;
-      --font-ui: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      --radius: 0.75rem;
-      --tracking-normal: 0rem;
-      --shadow: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
-    }
-
-    .dark {
-      --background: oklch(0.1797 0.0043 308.1928);
-      --foreground: oklch(0.8109 0 0);
-      --card: oklch(0.1822 0 0);
-      --card-foreground: oklch(0.8109 0 0);
-      --popover: oklch(0.1797 0.0043 308.1928);
-      --popover-foreground: oklch(0.8109 0 0);
-      --primary: oklch(0.7214 0.1337 49.9802);
-      --primary-foreground: oklch(0.1797 0.0043 308.1928);
-      --secondary: oklch(0.5940 0.0443 196.0233);
-      --secondary-foreground: oklch(0.1797 0.0043 308.1928);
-      --muted: oklch(0.2520 0 0);
-      --muted-foreground: oklch(0.6268 0 0);
-      --accent: oklch(0.3211 0 0);
-      --accent-foreground: oklch(0.8109 0 0);
-      --destructive: oklch(0.5940 0.0443 196.0233);
-      --destructive-foreground: oklch(0.1797 0.0043 308.1928);
-      --border: oklch(0.2520 0 0);
-      --input: oklch(0.2520 0 0);
-      --ring: oklch(0.7214 0.1337 49.9802);
-      --chart-1: oklch(0.5940 0.0443 196.0233);
-      --chart-2: oklch(0.7214 0.1337 49.9802);
-      --chart-3: oklch(0.8721 0.0864 68.5474);
-      --chart-4: oklch(0.6268 0 0);
-      --chart-5: oklch(0.6830 0 0);
-      --shadow: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
+      --bg: #0f0f10;
+      --bg-elev: #18181b;
+      --card: #1c1c20;
+      --card-hover: #222227;
+      --fg: #f4f4f5;
+      --fg-muted: #a1a1aa;
+      --fg-dim: #71717a;
+      --border: #2a2a30;
+      --border-light: #33333a;
+      --accent: #f59e0b;
+      --accent-dim: #b45309;
+      --accent-glow: rgba(245, 158, 11, 0.15);
+      --green: #10b981;
+      --green-dim: #065f46;
+      --green-glow: rgba(16, 185, 129, 0.12);
+      --red: #ef4444;
+      --red-dim: #991b1b;
+      --red-glow: rgba(239, 68, 68, 0.12);
+      --blue: #3b82f6;
+      --blue-glow: rgba(59, 130, 246, 0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.2);
+      --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, monospace;
     }
 
     body {
-      width: 420px;
-      background: var(--background);
-      font-family: var(--font-sans);
-      letter-spacing: var(--tracking-normal);
-      color: var(--foreground);
-      padding: 16px 16px 18px;
+      width: 400px;
+      background: var(--bg);
+      font-family: var(--font-ui);
+      color: var(--fg);
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .app {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
+    .app { display: flex; flex-direction: column; min-height: 520px; }
 
-    /* Cards live here — this gap was missing, so blocks looked stuck together */
-    #content {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
+    /* ─── Header ─── */
     .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 2px 2px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 18px 12px;
+      background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .logo {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 16px; color: #1c1c20;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+    .brandText { display: flex; flex-direction: column; gap: 1px; }
+    .brandTitle { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+    .brandSub { font-size: 10px; color: var(--fg-dim); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .iconBtn {
+      width: 34px; height: 34px; border-radius: var(--radius-sm);
+      background: var(--card); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 140ms ease;
+      color: var(--fg-muted);
+    }
+    .iconBtn:hover { background: var(--card-hover); border-color: var(--border-light); color: var(--fg); }
+
+    /* ─── Body ─── */
+    .body { padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+
+    /* ─── States ─── */
+    .state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 48px 24px; text-align: center; gap: 12px; flex: 1;
+    }
+    .stateIcon { width: 48px; height: 48px; opacity: 0.4; }
+    .stateTitle { font-size: 14px; font-weight: 600; color: var(--fg); }
+    .stateMsg { font-size: 12px; color: var(--fg-dim); line-height: 1.5; max-width: 280px; }
+    .spinner {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Cards ─── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
     }
 
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
+    /* ─── Price hero ─── */
+    .priceHero { display: flex; flex-direction: column; gap: 12px; }
+    .priceTop { display: flex; justify-content: space-between; align-items: flex-start; }
+    .priceLabel { font-size: 10px; color: var(--fg-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+    .priceValue { font-size: 32px; font-weight: 800; letter-spacing: -1px; font-family: var(--font-mono); line-height: 1; }
+    .priceBadge {
+      font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 20px;
+      display: flex; align-items: center; gap: 4px;
     }
+    .badge-green { background: var(--green-glow); color: var(--green); border: 1px solid var(--green-dim); }
+    .badge-red { background: var(--red-glow); color: var(--red); border: 1px solid var(--red-dim); }
+    .badge-neutral { background: var(--card-hover); color: var(--fg-muted); border: 1px solid var(--border-light); }
+    .badge-accent { background: var(--accent-glow); color: var(--accent); border: 1px solid var(--accent-dim); }
 
-    .brandTitle {
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: -0.2px;
-      color: var(--foreground);
-      line-height: 1.15;
+    .statsRow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat {
+      background: var(--bg-elev); border-radius: var(--radius-sm);
+      padding: 10px 12px; display: flex; flex-direction: column; gap: 2px;
     }
+    .statLabel { font-size: 9px; color: var(--fg-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .statValue { font-size: 14px; font-weight: 700; font-family: var(--font-mono); color: var(--fg); }
 
-    .brandSub {
-      font-size: 11px;
-      color: var(--muted-foreground);
-      line-height: 1.1;
+    /* ─── Confidence bar ─── */
+    .confidenceBar { display: flex; flex-direction: column; gap: 6px; }
+    .confidenceHeader { display: flex; justify-content: space-between; align-items: center; }
+    .confidenceLabel { font-size: 10px; color: var(--fg-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .confidenceValue { font-size: 11px; font-weight: 700; font-family: var(--font-mono); color: var(--fg); }
+    .confidenceTrack { height: 4px; background: var(--bg-elev); border-radius: 2px; overflow: hidden; }
+    .confidenceFill { height: 100%; border-radius: 2px; transition: width 400ms ease; }
+
+    /* ─── Chart ─── */
+    .chartCard { display: flex; flex-direction: column; gap: 10px; }
+    .chartHeader { display: flex; justify-content: space-between; align-items: center; }
+    .chartTitle { font-size: 11px; color: var(--fg-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .chartMeta { font-size: 10px; color: var(--fg-dim); font-family: var(--font-mono); }
+    .chart { height: 200px; position: relative; }
+    canvas { width: 100% !important; height: 100% !important; }
+
+    /* ─── Footer ─── */
+    .footer {
+      padding: 10px 16px; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-elev);
     }
+    .footerText { font-size: 10px; color: var(--fg-dim); font-family: var(--font-mono); }
+    .footerDot {
+      width: 6px; height: 6px; border-radius: 50%; display: inline-block;
+      margin-right: 5px; vertical-align: middle;
+    }
+    .dot-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot-red { background: var(--red); }
+    .dot-amber { background: var(--accent); }
+
+    /* ─── Register view ─── */
+    .registerView {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 48px 24px; text-align: center; gap: 16px; flex: 1;
+    }
+    .registerLogo {
+      width: 56px; height: 56px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 28px; color: #1c1c20;
+      box-shadow: 0 0 32px var(--accent-glow);
+    }
+    .registerTitle { font-size: 18px; font-weight: 700; }
+    .registerDesc { font-size: 12px; color: var(--fg-muted); line-height: 1.6; max-width: 280px; }
 
     .btn {
-      appearance: none;
-      border: 1px solid var(--border);
-      background: color-mix(in oklab, var(--card) 92%, black 8%);
-      color: var(--foreground);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 12px;
-      font-family: var(--font-ui);
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 120ms ease, border-color 120ms ease;
-      white-space: nowrap;
+      appearance: none; border: none; border-radius: var(--radius-sm);
+      padding: 10px 20px; font-size: 13px; font-weight: 600; font-family: var(--font-ui);
+      cursor: pointer; transition: all 140ms ease; display: inline-flex;
+      align-items: center; gap: 6px;
     }
-
-    .btn:hover {
-      background: color-mix(in oklab, var(--card) 86%, var(--accent) 14%);
-    }
-
-    .btn:active {
-      background: color-mix(in oklab, var(--card) 82%, var(--accent) 18%);
-    }
-
     .btnPrimary {
-      border-color: color-mix(in oklab, var(--primary) 55%, var(--border) 45%);
-      background: color-mix(in oklab, var(--primary) 18%, var(--card) 82%);
-      color: var(--foreground);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+      color: #1c1c20; box-shadow: 0 0 16px var(--accent-glow);
+    }
+    .btnPrimary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+    .btnPrimary:active { transform: translateY(0); }
+    .btnPrimary:disabled { opacity: 0.6; cursor: wait; transform: none; }
+
+    .errorBox {
+      background: var(--red-glow); border: 1px solid var(--red-dim);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      font-size: 12px; color: var(--red); max-width: 300px;
     }
 
-    .btnPrimary:hover {
-      background: color-mix(in oklab, var(--primary) 22%, var(--card) 78%);
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-    }
-
-    .state {
-      font-size: 13px;
-      color: var(--muted-foreground);
-      text-align: center;
-      padding: 16px 6px;
-    }
-
-    .heroRow {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-    }
-
-    .heroMeta {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .heroLabel {
-      font-size: 12px;
-      color: var(--muted-foreground);
-      font-weight: 600;
-      line-height: 1.1;
-    }
-
-    .price {
-      font-size: 38px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      line-height: 1;
-    }
-
-    .badge {
-      font-size: 12px;
-      font-weight: 700;
-      padding: 7px 11px;
-      border-radius: 999px;
-      border: 1px solid transparent;
-      background: color-mix(in oklab, var(--muted) 45%, var(--card) 55%);
-      color: var(--muted-foreground);
-      line-height: 1;
-    }
-
-    .divider {
-      height: 1px;
-      background: color-mix(in oklab, var(--border) 70%, transparent 30%);
-      margin: 16px 0;
-    }
-
-    .statsGrid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-
-    .stat {
-      border: 1px solid color-mix(in oklab, var(--border) 80%, transparent 20%);
-      background: color-mix(in oklab, var(--muted) 55%, var(--card) 45%);
-      border-radius: calc(var(--radius) - 4px);
-      padding: 12px 12px;
-      min-width: 0;
-    }
-
-    .statLabel {
-      font-size: 10px;
-      color: var(--muted-foreground);
-      font-weight: 700;
-      letter-spacing: 0.2px;
-      text-transform: uppercase;
-      line-height: 1.1;
-    }
-
-    .statValue {
-      margin-top: 4px;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--card-foreground);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .chartCard {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      padding-top: 2px;
-    }
-
-    .chart-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 2px 2px 0;
-    }
-
-    .chart-title {
-      font-size: 12px;
-      color: var(--muted-foreground);
-      font-weight: 700;
-    }
-
-    .chart {
-      height: 220px;
-      margin-top: 2px;
-      padding: 4px 0 0;
-    }
-
-    canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
+    /* ─── Animations ─── */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .fadeIn { animation: fadeIn 200ms ease; }
   </style>
 </head>
-<body class="dark">
+<body>
 
 <div class="app">
 
+  <!-- Header -->
   <div class="header">
     <div class="brand">
-      <div class="brandTitle">TruePrice</div>
-      <div class="brandSub">Price history for this product</div>
+      <div class="logo">T</div>
+      <div class="brandText">
+        <div class="brandTitle">TruePrice</div>
+        <div class="brandSub">Reputation-weighted</div>
+      </div>
     </div>
-    <button id="dashboardBtn" class="btn btnPrimary">Dashboard</button>
+    <button id="dashboardBtn" class="iconBtn" title="Open dashboard">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/>
+        <rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>
+      </svg>
+    </button>
   </div>
 
-  <div id="loading" class="state">Loading market data...</div>
-  <div id="error" class="state" style="display:none;"></div>
+  <!-- Register view -->
+  <div id="registerView" class="registerView" style="display:none;">
+    <div class="registerLogo">T</div>
+    <div class="registerTitle">Welcome to TruePrice</div>
+    <div class="registerDesc">Register an anonymous client to start submitting price observations and viewing reputation-weighted price history.</div>
+    <button id="registerBtn" class="btn btnPrimary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+      Register
+    </button>
+    <div id="registerError" class="errorBox" style="display:none;"></div>
+  </div>
 
-  <div id="content" style="display:none;">
+  <!-- Loading state -->
+  <div id="loading" class="state">
+    <div class="spinner"></div>
+    <div class="stateTitle" id="loadingText">Loading...</div>
+  </div>
 
-    <div class="card">
-      <div class="heroRow">
-        <div class="heroMeta">
-          <div class="heroLabel">Current price</div>
-          <div id="currentPrice" class="price">-</div>
+  <!-- Error state -->
+  <div id="error" class="state" style="display:none;">
+    <svg class="stateIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div class="stateTitle" id="errorTitle">Something went wrong</div>
+    <div class="stateMsg" id="errorMsg"></div>
+  </div>
+
+  <!-- Main content -->
+  <div id="content" class="body" style="display:none;">
+
+    <!-- Price hero card -->
+    <div class="card priceHero fadeIn">
+      <div class="priceTop">
+        <div>
+          <div class="priceLabel" id="productLabel">Canonical Price</div>
+          <div id="currentPrice" class="priceValue">$—</div>
         </div>
-        <div id="priceChange" class="badge"></div>
+        <div id="priceChange" class="priceBadge badge-neutral">—</div>
       </div>
 
-      <div class="divider"></div>
+      <div class="statsRow">
+        <div class="stat">
+          <div class="statLabel">Low</div>
+          <div id="minStat" class="statValue">—</div>
+        </div>
+        <div class="stat">
+          <div class="statLabel">High</div>
+          <div id="maxStat" class="statValue">—</div>
+        </div>
+        <div class="stat">
+          <div class="statLabel">Hours</div>
+          <div id="hoursStat" class="statValue">—</div>
+        </div>
+      </div>
 
-      <div class="statsGrid">
-        <div class="stat">
-          <div class="statLabel">Min</div>
-          <div id="minStat" class="statValue">-</div>
+      <div class="confidenceBar">
+        <div class="confidenceHeader">
+          <span class="confidenceLabel">Confidence</span>
+          <span class="confidenceValue" id="confidenceValue">—</span>
         </div>
-        <div class="stat">
-          <div class="statLabel">Max</div>
-          <div id="maxStat" class="statValue">-</div>
-        </div>
-        <div class="stat">
-          <div class="statLabel">Days</div>
-          <div id="daysStat" class="statValue">-</div>
+        <div class="confidenceTrack">
+          <div class="confidenceFill" id="confidenceFill" style="width:0%; background: var(--accent);"></div>
         </div>
       </div>
     </div>
 
-    <div class="card chartCard">
-      <div class="chart-top">
-        <div class="chart-title">Price history</div>
+    <!-- Chart card -->
+    <div class="card chartCard fadeIn">
+      <div class="chartHeader">
+        <div class="chartTitle">Price History</div>
+        <div class="chartMeta" id="chartMeta">—</div>
       </div>
-
       <div class="chart">
         <canvas id="priceChart"></canvas>
       </div>
     </div>
 
+  </div>
+
+  <!-- Footer -->
+  <div class="footer" id="footer" style="display:none;">
+    <div class="footerText" id="footerStatus">
+      <span class="footerDot dot-amber"></span>Connecting...
+    </div>
+    <div class="footerText" id="footerClient">—</div>
   </div>
 
 </div>

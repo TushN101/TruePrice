@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "TruePrice",
-  "version": "1.0",
-  "description": "Crowdsourced Amazon price tracker with history charts.",
+  "version": "2.0.0",
+  "description": "Crowdsourced eBay price tracker with reputation-weighted price history charts.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -10,8 +10,13 @@
     "tabs"
   ],
   "host_permissions": [
-    "https://*.amazon.in/*",
-    "http://localhost:8000/*"
+    "https://*.ebay.com/*",
+    "https://*.ebay.co.uk/*",
+    "https://*.ebay.in/*",
+    "https://*.ebay.de/*",
+    "https://*.ebay.ca/*",
+    "https://*.ebay.com.au/*",
+    "http://vm:5000/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -33,12 +38,18 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.amazon.in/*"],
+      "matches": [
+        "https://*.ebay.com/itm/*",
+        "https://*.ebay.co.uk/itm/*",
+        "https://*.ebay.in/itm/*",
+        "https://*.ebay.de/itm/*",
+        "https://*.ebay.ca/itm/*",
+        "https://*.ebay.com.au/itm/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],
-
   "web_accessible_resources": [
     {
       "resources": ["dashboard.html"],

@@ -1,71 +1,141 @@
+"""Flask application — TruePrice backend.
+
+Routes
+------
+
+* ``GET  /``                        — health check.
+* ``POST /api/registerClient``      — anonymous registration, returns
+                                       ``clientId`` + access/refresh tokens.
+* ``POST /api/refresh``             — exchange a refresh token for a new
+                                       access/refresh pair.
+* ``POST /api/observations``        — store a raw price observation (JWT).
+* ``POST /api/history``             — get computed price history (JWT),
+                                       lazily computing missing hours.
+
+All authenticated responses rotate the refresh token (brief §5).
+"""
+from __future__ import annotations
+
+import logging
+from datetime import timedelta
+
 from flask import Flask, jsonify, make_response, request
 from flask_jwt_extended import (
     JWTManager,
+    create_access_token,
+    create_refresh_token,
     get_jwt_identity,
     jwt_required,
-    create_refresh_token,
 )
+
+from config import config
 from util.clientRegister import createUser
-from util.postHandler import processData
-from util.fetchHandler import fetchData
-import secrets
+from util.databaseManager import init_db
+from util.fetchHandler import fetch_history
+from util.postHandler import process_observation
 
+# ── Logging ──────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+logger = logging.getLogger("trueprice")
 
+# ── Flask + JWT setup ───────────────────────────────────────────────────
 app = Flask(__name__)
-app.config["JWT_SECRET_KEY"] = secrets.token_hex(32)
+app.config["JWT_SECRET_KEY"] = config.jwt_secret
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=config.jwt_access_expires)
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(seconds=config.jwt_refresh_expires)
 jwt = JWTManager(app)
 
-@app.route('/')
+# Initialise MongoDB (uses mongomock in tests — see tests/conftest.py).
+init_db(config.mongo_uri, config.mongo_db)
+
+
+# ── Routes ───────────────────────────────────────────────────────────────
+
+@app.route("/")
 def index():
-    return "Hello World",200
+    return jsonify({"name": "TruePrice API", "status": "ok"}), 200
 
-@app.route('/api/registerClient',methods=["POST"])
+
+@app.route("/api/registerClient", methods=["POST"])
 def registerClient():
-    ipAddress = str(request.remote_addr)
-    response = createUser(ipAddress)
-    if response["status"] == "error":
-        return jsonify(response),400
-    else:
-        # Generate refresh token
-        refresh_token = create_refresh_token(identity=response["clientId"])
-        response["refresh_token"] = refresh_token
-        response_obj = make_response(jsonify(response))
-        response_obj.set_cookie('access_token', response["access_token"], max_age=60*60*24*30)
-        return response_obj,200
+    ip_address = request.remote_addr or "0.0.0.0"
+    result = createUser(ip_address)
+    if result["status"] == "error":
+        return jsonify(result), 400
 
-@app.route('/api/postData' , methods=["POST"])
+    # Issue a refresh token alongside the access token.
+    result["refreshToken"] = create_refresh_token(identity=result["clientId"])
+    response = make_response(jsonify(result))
+    response.set_cookie(
+        "access_token",
+        result["accessToken"],
+        max_age=config.jwt_access_expires,
+        httponly=True,
+        samesite="Lax",
+    )
+    return response, 200
+
+
+@app.route("/api/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh_token():
+    """Exchange a valid refresh token for a new access+refresh pair."""
+    client_id = get_jwt_identity()
+    access = create_access_token(identity=client_id)
+    new_refresh = create_refresh_token(identity=client_id)
+    return jsonify({
+        "status": "success",
+        "accessToken": access,
+        "refreshToken": new_refresh,
+    }), 200
+
+
+@app.route("/api/observations", methods=["POST"])
 @jwt_required()
-def postData():
-    clientId = get_jwt_identity()
-    clientIp = request.remote_addr
-    postData = request.get_json()
-    response = processData(postData , clientId)
+def post_observation():
+    client_id = get_jwt_identity()
+    client_ip = request.remote_addr
+    data = request.get_json(silent=True) or {}
+    result = process_observation(data, client_id, client_ip)
+    # Always rotate the refresh token (brief §5).
+    result["refreshToken"] = create_refresh_token(identity=client_id)
+    if result["status"] == "error":
+        return jsonify(result), 400
+    return jsonify(result), 200
 
-    refresh_token = create_refresh_token(identity=clientId)
-    response["refresh_token"] = refresh_token
 
-    if response["status"] == "error":
-        return jsonify(response),400
-    else:
-        return jsonify(response),200
-
-@app.route('/api/getData' , methods=["POST"])
+@app.route("/api/history", methods=["POST"])
 @jwt_required()
-def getData():
-    clientId = get_jwt_identity()
-    clientIp = request.remote_addr
-    postData = request.get_json()
-    response = fetchData(postData , clientId)
+def get_history():
+    client_id = get_jwt_identity()
+    data = request.get_json(silent=True) or {}
+    product_id = data.get("productId")
+    from_time = data.get("from")
+    to_time = data.get("to")
 
-    refresh_token = create_refresh_token(identity=clientId)
-    response["refresh_token"] = refresh_token
+    if not product_id:
+        return jsonify({
+            "status": "error",
+            "message": "Missing required field: productId",
+            "refreshToken": create_refresh_token(identity=client_id),
+        }), 400
 
-    if response["status"] == "error":
-        return jsonify(response),400
-    elif response["status"] == "missing":
-        return jsonify(response),204
-    else:
-        return jsonify(response),200
+    result = fetch_history(str(product_id), from_time, to_time)
+    result["refreshToken"] = create_refresh_token(identity=client_id)
 
-if __name__ == '__main__':
-    app.run(debug=True,host="0.0.0.0",port=5000)
+    if result["status"] == "error":
+        return jsonify(result), 400
+    # "missing" and "success" both return 200 — the body's ``status``
+    # field tells the client whether history exists.
+    return jsonify(result), 200
+
+
+if __name__ == "__main__":
+    app.run(
+        host=config.flask_host,
+        port=config.flask_port,
+        debug=config.flask_debug,
+    )
