@@ -68,6 +68,8 @@ def process_observation(
 
     now = datetime.now(timezone.utc)
 
+    print("Got price :" , price)
+
     # Upsert the product record so the validator has a URL to work with
     # later.  Using the eBay item ID as ``_id`` keeps the document small
     # and lookup O(1).
@@ -82,6 +84,7 @@ def process_observation(
                     "title": title,
                     "currency": currency,
                     "lastSeenAt": now,
+                    "lastPrice": price,
                 },
                 "$setOnInsert": {"firstSeenAt": now},
             },

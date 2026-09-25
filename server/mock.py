@@ -21,14 +21,15 @@ each hour.  This stands in for the eBay validator — which can only
 return the *current* price, not historical prices.
 
 Usage:
-    python tester.py                          # interactive product selection
-    python tester.py --product 123456789      # specify product ID
-    python tester.py --days 7 --clients 100   # custom parameters
-    python tester.py --clean                  # remove all simulation data
+    python mock.py                          # interactive product selection
+    python mock.py --product 123456789      # specify product ID
+    python mock.py --days 7 --clients 100   # custom parameters
+    python mock.py --clean                  # remove all simulation data
 
 After running, open the TruePrice extension popup on the product page
 (or the dashboard) to see the computed price history chart.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -233,7 +234,7 @@ def generate_clients(n_clients):
 
 # ─── Price trajectory ───────────────────────────────────────────────────
 
-def generate_price_trajectory(days, seed=42):
+def generate_price_trajectory(days , itemPrice , seed=42):
     """Generate a true price for each day of the simulation.
 
     Returns {day_index: true_price} where day_index 0 = oldest,
@@ -241,7 +242,7 @@ def generate_price_trajectory(days, seed=42):
     """
     rng = random.Random(seed)
     trajectory = {}
-    price = BASE_PRICE
+    price = itemPrice
     for day in range(days):
         drift = rng.uniform(-DAILY_DRIFT, DAILY_DRIFT)
         price = round(price * (1 + drift), 2)
@@ -468,7 +469,7 @@ def run_simulation(product_id, days, n_clients):
 
     # 4 — Generate price trajectory
     print("\n3. Generating price trajectory...")
-    trajectory = generate_price_trajectory(days)
+    trajectory = generate_price_trajectory(days ,  product.get("lastPrice"))
     print(f"  True price range: ${min(trajectory.values()):.2f} – ${max(trajectory.values()):.2f}")
     for day, price in sorted(trajectory.items()):
         days_ago = days - 1 - day
