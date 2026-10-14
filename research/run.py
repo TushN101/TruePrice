@@ -11,8 +11,6 @@ if CURRENT_DIR not in sys.path:
 from web.app import create_app
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5050))
-    host = os.environ.get("HOST", "0.0.0.0")
     print(f"Starting TruePrice Simulation Platform at http://{host}:{port}")
     app = create_app()
-    app.run(host=host, port=port, debug=False)
+    app.run(debug=True, host='0.0.0.0', port=5000)
