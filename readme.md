@@ -24,18 +24,19 @@ TruePrice is a lightweight Chrome/Brave/Edge extension that captures product pri
 </p>
 
 * **A real dashboard**
-  View all tracked products in one place, with mini charts and one-click access to Amazon.
+  View all tracked products in one place, with mini charts and one-click access to Ebay.
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/8781ab46-c16e-4fb9-9328-15ced8ecd964" width="800" />
 </p>
 
+* **A simulation dashboard**
+  Simulate edge cases and find out where the algorithm breaks
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/19a44454-98b4-4701-8d15-ff32add6b54f" width="800" />
+</p>
+
+
 ---
-
-## Authors
-
-* Raahim Shaikh
-* Pramath Kelkar
-* Vedanga Bendra
-* Norz Oman
 
