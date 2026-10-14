@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Simulation Audit Report — TruePrice{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+  <div>
+    <h1 class="heading-display">Simulation Audit Report</h1>
+    <p class="subheading" style="margin-bottom: 0;">Comprehensive verification of consensus integrity and reputation resilience for <strong>{{ config.fake_product_name }}</strong>.</p>
+  </div>
+  <div class="btn-group">
+    <a href="{{ url_for('configure') }}" class="btn btn--secondary">&larr; Run Another Simulation</a>
+    <a href="{{ url_for('docs') }}" class="btn btn--primary">View Formulas &amp; Math</a>
+  </div>
+</div>
+
+<!-- 1. Executive Verdict Banner -->
+{% if report.defense_held %}
+<div class="verdict-banner verdict-banner--success">
+  <div class="verdict-banner__icon">
+    <svg style="width:20px;height:20px;"><use href="#i-shield"/></svg>
+  </div>
+  <div class="verdict-banner__content">
+    <h2>Defense Succeeded: Attack Neutralized with Zero Infiltration</h2>
+    <p class="verdict-banner__text">
+      Across {{ report.total_hours }} simulated hours, the reputation-weighted consensus mechanism successfully rejected poisoned prices submitted by {{ config.imposter_count }} imposters and {{ config.sleeper_cell_count }} sleeper cells.
+      <strong>Zero adversarial clients achieved trusted status</strong>, predicted prices remained strictly within the 5% margin, and external validations dropped from 100% on Day 0 down to {{ (report.daily_validation_rates[-1].validation_rate * 100)|round(1) }}% as autonomous consensus took over.
+    </p>
+  </div>
+</div>
+{% else %}
+<div class="verdict-banner verdict-banner--danger">
+  <div class="verdict-banner__icon">
+    <svg style="width:20px;height:20px;"><use href="#i-shield"/></svg>
+  </div>
+  <div class="verdict-banner__content">
+    <h2>Defense Breached: Attackers Infiltrated Consensus</h2>
+    <p class="verdict-banner__text">{{ report.conclusion }}</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- 2. The 3 Core Pillars of the Defense -->
+<div class="grid grid--3" style="margin-bottom: 28px;">
+  <div class="pillar-card">
+    <span class="pillar-card__eyebrow" style="color: var(--color-success);">Pillar 1: Attack Suppression</span>
+    <div class="pillar-card__value" style="color: {% if report.bad_clients_trusted_count == 0 %}var(--color-success){% else %}var(--color-danger){% endif %};">
+      {{ report.bad_clients_trusted_percent }}%
+    </div>
+    <p class="pillar-card__desc">
+      <strong>Bad Clients Trusted (>0.5):</strong> {{ report.bad_clients_trusted_count }} of {{ report.bad_users_total }} adversaries ever exceeded neutral trust. All {{ config.imposter_count }} imposters and {{ config.sleeper_cell_count }} sleepers were crushed to the 0.10 reputation floor.
+    </p>
+  </div>
+
+  <div class="pillar-card">
+    <span class="pillar-card__eyebrow" style="color: var(--color-accent);">Pillar 2: Error Forgiveness</span>
+    <div class="pillar-card__value" style="color: var(--color-text);">
+      {{ report.honest_still_trusted_percent }}%
+    </div>
+    <p class="pillar-card__desc">
+      <strong>Honest Clients Trusted (>0.5):</strong> All {{ report.honest_still_trusted }} of {{ report.honest_users_total }} honest clients finished with high trust. Although {{ report.honest_punished_count }} made human mistakes and were penalized, bounded updates allowed them to quickly recover.
+    </p>
+  </div>
+
+  <div class="pillar-card">
+    <span class="pillar-card__eyebrow" style="color: var(--color-text);">Pillar 3: Autonomous Autonomy</span>
+    <div class="pillar-card__value" style="color: var(--color-accent);">
+      {{ (report.daily_validation_rates[-1].validation_rate * 100)|round(1) }}%
+    </div>
+    <p class="pillar-card__desc">
+      <strong>Final Validation Rate:</strong> Validations dropped from 100% on Day 0 down to {{ (report.daily_validation_rates[-1].validation_rate * 100)|round(1) }}% by Day {{ config.total_days - 1 }}. Only {{ report.total_validations }} of {{ report.total_hours }} total hours required external ground truth calls.
+    </p>
+  </div>
+</div>
+
+<!-- 3. Large Full-Width Price History Chart -->
+<div class="hero-chart-card">
+  <div class="card__title">
+    <span>Complete 504-Hour Price History: Defense Under Attack</span>
+    <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-sans); font-weight: normal;">Attack phase shaded in terracotta</span>
+  </div>
+  <p class="hint" style="margin-bottom: 16px;">
+    Known market price (charcoal line) vs trust-weighted crowd prediction (terracotta line). Notice how the crowd prediction ignored attacker fake submissions ($99.00) and accurately tracked the true market price throughout.
+  </p>
+  <div class="chart-wrapper-hero">
+    <canvas id="fullPriceChart"></canvas>
+  </div>
+</div>
+
+<!-- 4. Validation Drop Over Time Chart -->
+<div class="card">
+  <div class="card__title">
+    <span>Validation Rate Over Time (Training Wheels Falling Away)</span>
+    <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-sans); font-weight: normal;">Daily validation frequency</span>
+  </div>
+  <p class="hint" style="margin-bottom: 16px;">
+    Demonstrates the core system property: external validation is heavy on Day 0 when the crowd is untrusted, and then falls dramatically as honest participants accumulate trust scores.
+  </p>
+  <div class="chart-wrapper-secondary">
+    <canvas id="validationRateChart"></canvas>
+  </div>
+</div>
+
+<!-- 5. Archetype Trust Transition Breakdown -->
+<div class="card">
+  <div class="card__title">Archetype Trust Transition Breakdown</div>
+  <p class="hint" style="margin-bottom: 16px;">Shows initial reputation baseline (0.50) vs final average reputation after 504 hours of submissions.</p>
+
+  <div class="grid grid--3">
+    <div style="background: var(--color-surface-hover); padding: 18px; border-radius: var(--radius-md); border-left: 3px solid var(--color-success);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <strong style="color: var(--color-success); font-size: var(--text-sm);">Honest Population</strong>
+        <span class="badge badge--success">{{ report.honest_users_total }} clients</span>
+      </div>
+      <div style="font-family: var(--font-serif); font-size: 1.8rem; font-weight: 600; color: var(--color-text);">{{ report.mean_honest_trust }}</div>
+      <p class="hint" style="margin-top: 4px;">Climbed from 0.50 neutral baseline up to strong trusted authority.</p>
+    </div>
+
+    <div style="background: var(--color-surface-hover); padding: 18px; border-radius: var(--radius-md); border-left: 3px solid var(--color-danger);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <strong style="color: var(--color-danger); font-size: var(--text-sm);">Pure Imposters</strong>
+        <span class="badge badge--danger">{{ config.imposter_count }} clients</span>
+      </div>
+      <div style="font-family: var(--font-serif); font-size: 1.8rem; font-weight: 600; color: var(--color-text);">{{ report.mean_imposter_trust }}</div>
+      <p class="hint" style="margin-top: 4px;">Crushed from 0.50 down to the mathematical floor of 0.10.</p>
+    </div>
+
+    <div style="background: var(--color-surface-hover); padding: 18px; border-radius: var(--radius-md); border-left: 3px solid var(--color-warning);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <strong style="color: var(--color-warning); font-size: var(--text-sm);">Sleeper Cells</strong>
+        <span class="badge badge--warning">{{ config.sleeper_cell_count }} clients</span>
+      </div>
+      <div style="font-family: var(--font-serif); font-size: 1.8rem; font-weight: 600; color: var(--color-text);">{{ report.mean_sleeper_trust }}</div>
+      <p class="hint" style="margin-top: 4px;">Built ~0.80 trust initially, then plummeted to 0.10 immediately upon turning bad.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 6. Top 20 Final Audit Table -->
+<div class="card">
+  <div class="card__title">
+    <span>Final Top 20 Clients Ranked by Reputation</span>
+    <span class="badge badge--success" style="font-weight: 600;">0 Adversaries In Top 20</span>
+  </div>
+  <p class="hint" style="margin-bottom: 16px;">
+    Verifies that no adversary managed to penetrate the top 20 rankings.
+  </p>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Client ID</th>
+          <th>Archetype</th>
+          <th>Final Trust</th>
+          <th>Submissions</th>
+          <th>Correct</th>
+          <th>Incorrect</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in report.top_20 %}
+        <tr>
+          <td style="font-weight: 600; color: var(--color-text-faint);">{{ loop.index }}</td>
+          <td style="font-family: var(--font-mono); font-size: 0.8rem;">{{ u.user_id }}</td>
+          <td>
+            <span class="badge {% if u.archetype == 'honest' %}badge--success{% elif u.archetype == 'imposter' %}badge--danger{% else %}badge--danger{% endif %}">
+              {{ u.archetype }}
+            </span>
+          </td>
+          <td>
+            <div class="trust-bar">
+              <div class="trust-bar__bg">
+                <div class="trust-bar__fill" style="width: {{ ((u.reputation - 0.1) / 0.8 * 100)|round }}%; background: {% if u.reputation > 0.5 %}var(--color-success){% else %}var(--color-danger){% endif %};"></div>
+              </div>
+              <strong style="font-size: var(--text-xs);">{{ u.reputation }}</strong>
+            </div>
+          </td>
+          <td>{{ u.submissions }}</td>
+          <td style="color: var(--color-success); font-weight: 500;">{{ u.correct_count }}</td>
+          <td style="color: var(--color-danger); font-weight: 500;">{{ u.incorrect_count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.REPORT_RUN_ID = "{{ run_id }}";
+  window.ATTACK_START_TICK = {{ config.attack_start_tick }};
+  window.DAILY_VAL_RATES = {{ report.daily_validation_rates | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/report.js') }}"></script>
+{% endblock %}

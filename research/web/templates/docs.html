@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}How TruePrice Works: Formulas &amp; Defense — TruePrice{% endblock %}
+{% block container_class %}page-container--narrow{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 36px;">
+  <div class="pill" style="margin-bottom: 12px;">
+    <span class="pill__dot"></span>
+    <span>Mathematical Reference &bull; 6-Month Refresher</span>
+  </div>
+  <h1 class="heading-display">How TruePrice Works: Formulas &amp; Defense Architecture</h1>
+  <p class="subheading">A straightforward technical guide to the exact mathematical formulas, clustering logic, and reputation updates that power the platform.</p>
+</div>
+
+<!-- Section 1: The Core Philosophy -->
+<section class="doc-section">
+  <h2 class="doc-section__title">1. The Big Picture &amp; System Philosophy</h2>
+  <p class="doc-p">
+    In crowdsourced price tracking, malicious users or botnets can easily submit falsified prices (e.g. promoting fake discounts). If every user's vote is counted equally, attackers can easily outnumber real users.
+  </p>
+  <p class="doc-p">
+    TruePrice solves this by <strong>weighting each submission by the user's reputation score</strong> (bounded between <code>0.10</code> and <code>0.90</code>). Fresh clients begin at neutral <code>0.50</code>. When internal consensus is untrusted or divided, the system triggers <strong>authoritative validation</strong> against ground truth.
+  </p>
+  <div class="callout callout--info">
+    <strong>Key Principle:</strong> External validation acts as training wheels. At first, many validations occur. But as honest users prove themselves and gain trust, validations plummet, and the system runs autonomously.
+  </div>
+</section>
+
+<!-- Section 2: Price Clustering -->
+<section class="doc-section">
+  <h2 class="doc-section__title">2. Price Clustering Formula (Relative Tolerance)</h2>
+  <p class="doc-p">
+    Before consensus can be computed, incoming price submissions must be grouped into price clusters. Two prices \(p_1\) and \(p_2\) belong to the same cluster if their gap is within a <strong>relative tolerance</strong> (default: 2%):
+  </p>
+
+  <div class="formula-card">
+    <div class="formula-card__title">Relative Tolerance Formula</div>
+    <div class="formula-box">
+      <strong>gap</strong> = (p<sub>next</sub> - p<sub>prev</sub>) / p<sub>prev</sub> &le; 0.02 (2.0%)
+    </div>
+  </div>
+
+  <p class="doc-p">
+    <strong>Why Relative Gap instead of Absolute Dollars?</strong><br>
+    A $2.00 difference on a $10.00 book is a huge 20% error, but on a $2,000.00 television it is negligible (0.1%). Relative tolerance scales automatically across all price tags.
+  </p>
+  <p class="doc-p">
+    <strong>Clustering Algorithm:</strong> Sort submissions ascending by price. Walk the list sequentially. If the gap from the previous price is &le; 2%, append to the current cluster. Otherwise, begin a new cluster.
+  </p>
+</section>
+
+<!-- Section 3: Consensus & Weighted Median -->
+<section class="doc-section">
+  <h2 class="doc-section__title">3. Reputation-Weighted Consensus &amp; Weighted Median</h2>
+  <p class="doc-p">
+    Each cluster's voting strength is the sum of reputations of all participating clients in that cluster:
+  </p>
+
+  <div class="formula-card">
+    <div class="formula-card__title">Weighted Cluster Support &amp; Confidence</div>
+    <div class="formula-box">
+      <strong>Support(Cluster)</strong> = &sum; Reputation(Client<sub>i</sub>)<br><br>
+      <strong>Confidence</strong> = Winning_Cluster_Support / Total_Support_All_Clusters
+    </div>
+  </div>
+
+  <p class="doc-p">
+    <strong>Winning Cluster Selection:</strong>
+  </p>
+  <ul style="margin-left: 20px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 16px;">
+    <li>The cluster with the <strong>highest weighted support</strong> wins.</li>
+    <li>Ties are broken deterministically by higher unique client count, then by lower representative price.</li>
+    <li>Ten attackers at reputation 0.10 have a total support of 1.0. Just two honest users at reputation 0.80 have support 1.6, outvoting all ten attackers.</li>
+  </ul>
+
+  <p class="doc-p">
+    <strong>Representative Price (Weighted Median):</strong><br>
+    The canonical crowd price is the <em>weighted median</em> of observations in the winning cluster. Unlike a simple average, the weighted median cannot be skewed by extreme internal outliers.
+  </p>
+</section>
+
+<!-- Section 4: Validation Trigger Rules -->
+<section class="doc-section">
+  <h2 class="doc-section__title">4. Validation Triggers (The Safety Guardrails)</h2>
+  <p class="doc-p">
+    The platform refuses to accept crowd prices blindly. External validation against ground truth is automatically triggered if <strong>any</strong> of these conditions occur:
+  </p>
+
+  <div class="grid grid--3">
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); padding: 16px; border-radius: var(--radius-md);">
+      <strong style="color: var(--color-accent); font-size: var(--text-sm);">1. Untrusted Crowd</strong>
+      <div class="formula-box" style="margin: 8px 0; font-size: var(--text-xs);">
+        trusted_ratio &lt; 0.50
+      </div>
+      <p class="hint">Fewer than 50% of active users have reputation &gt; 0.5 (occurs early on Day 0).</p>
+    </div>
+
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); padding: 16px; border-radius: var(--radius-md);">
+      <strong style="color: var(--color-accent); font-size: var(--text-sm);">2. Weak Consensus / Agreement</strong>
+      <div class="formula-box" style="margin: 8px 0; font-size: var(--text-xs);">
+        confidence &lt; 0.80<br>or trusted_agreement &lt; 0.80
+      </div>
+      <p class="hint">Overall crowd confidence or agreement among trusted submissions fell below 80%.</p>
+    </div>
+
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); padding: 16px; border-radius: var(--radius-md);">
+      <strong style="color: var(--color-accent); font-size: var(--text-sm);">3. Cluster Tie</strong>
+      <div class="formula-box" style="margin: 8px 0; font-size: var(--text-xs);">
+        |Support<sub>1</sub> - Support<sub>2</sub>| &lt; 1e-9
+      </div>
+      <p class="hint">Top two clusters are tied. Internal consensus cannot break the deadlock.</p>
+    </div>
+  </div>
+
+  <p class="doc-p" style="margin-top: 16px;">
+    <strong>When validation triggers:</strong> The true market price authoritatively overrides the crowd, and all user observations for that hour are graded against it.
+  </p>
+</section>
+
+<!-- Section 5: The Reputation Update Formula -->
+<section class="doc-section">
+  <h2 class="doc-section__title">5. Reputation Adjustment: Bounded-Proportional Math</h2>
+  <p class="doc-p">
+    Client reputations are strictly bounded in <code>[0.10, 0.90]</code> and start at neutral <code>0.50</code>. The update model is <strong>strength-based</strong> and <strong>bounded-proportional</strong>:
+  </p>
+
+  <div class="formula-card">
+    <div class="formula-card__title">Step 1: Compute Update Magnitude</div>
+    <div class="formula-box">
+      <strong>normalized_strength</strong> = max(0.0, 2.0 &times; (consensus_strength - 0.5))<br>
+      <strong>magnitude</strong> = base_reward (0.05) + strength_factor (0.10) &times; normalized_strength<br>
+      <span style="color: var(--color-text-muted);">&bull; Split 50/50 consensus &rarr; magnitude = 0.05<br>&bull; Unanimous consensus &rarr; magnitude = 0.15</span>
+    </div>
+  </div>
+
+  <div class="formula-card">
+    <div class="formula-card__title">Step 2: Apply Bounded-Proportional Update</div>
+    <div class="formula-box">
+      If Submission is Correct (Reward):<br>
+      &nbsp;&nbsp;<strong>scale</strong> = (0.90 - current_reputation) / (0.90 - 0.10)<br>
+      &nbsp;&nbsp;<strong>delta</strong> = magnitude &times; scale<br>
+      &nbsp;&nbsp;<strong>new_reputation</strong> = current_reputation + delta<br><br>
+      If Submission is Incorrect (Penalty):<br>
+      &nbsp;&nbsp;<strong>scale</strong> = (current_reputation - 0.10) / (0.90 - 0.10)<br>
+      &nbsp;&nbsp;<strong>delta</strong> = magnitude &times; scale<br>
+      &nbsp;&nbsp;<strong>new_reputation</strong> = current_reputation - delta<br><br>
+      Result is clamped to [0.10, 0.90].
+    </div>
+  </div>
+
+  <h3 style="font-size: var(--text-md); margin-top: 20px; margin-bottom: 8px;">Why This Specific Math Defeats Attackers:</h3>
+  <ul style="margin-left: 20px; line-height: 1.7; color: var(--color-text-secondary);">
+    <li>
+      <strong>Trust is Easy to Lose:</strong> A high-reputation sleeper cell at <code>0.80</code> has a penalty scale of <code>(0.80 - 0.10) / 0.80 = 0.875</code>. When they submit bad data, their reputation drops violently, crushing them down to <code>0.10</code> in just 2-3 ticks.
+    </li>
+    <li>
+      <strong>Trust is Hard to Rebuild:</strong> A bad client at <code>0.10</code> gains incrementally and cannot regain voting power through a few lucky guesses.
+    </li>
+    <li>
+      <strong>Forgiving Honest Human Error:</strong> Honest users who make occasional 10% errors take a small, proportional dip, but quickly recover on subsequent correct ticks.
+    </li>
+  </ul>
+</section>
+
+<!-- Action Bar -->
+<div class="btn-group" style="margin-top: 32px;">
+  <a href="{{ url_for('configure') }}" class="btn btn--primary btn--lg">Start a Simulation &rarr;</a>
+  <a href="javascript:history.back()" class="btn btn--secondary btn--lg">&larr; Back to Previous Page</a>
+</div>
+{% endblock %}

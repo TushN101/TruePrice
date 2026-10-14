@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}TruePrice — Crowd-Consensus Simulation{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- SVG Icon Sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M5 5l14 14M19 5 5 19"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  </defs>
+</svg>
+
+<!-- Topbar Navigation (No Sidebar) -->
+<header class="topbar">
+  <div class="topbar__inner">
+    <div class="brand">
+      <a href="{{ url_for('configure') }}" style="display: flex; align-items: center; gap: 10px;">
+        <svg class="brand__logo"><use href="#i-spark"/></svg>
+        <span class="brand__name">TruePrice</span>
+      </a>
+      <span class="brand__pill">Simulation Testbed</span>
+    </div>
+
+    <nav class="topbar__nav">
+      <a class="nav-link {% if request.path == '/configure' or request.path == '/' %}is-active{% endif %}" href="{{ url_for('configure') }}">
+        <svg style="width:16px;height:16px;"><use href="#i-sliders"/></svg>
+        <span>Configure</span>
+      </a>
+
+      {% if run_id %}
+      <a class="nav-link {% if '/live/' in request.path %}is-active{% endif %}" href="{{ url_for('live_dashboard', run_id=run_id) }}">
+        <svg style="width:16px;height:16px;"><use href="#i-play"/></svg>
+        <span>Live Dashboard</span>
+      </a>
+      <a class="nav-link {% if '/report/' in request.path %}is-active{% endif %}" href="{{ url_for('report_page', run_id=run_id) }}">
+        <svg style="width:16px;height:16px;"><use href="#i-chart"/></svg>
+        <span>Audit Report</span>
+      </a>
+      {% endif %}
+
+      <a class="nav-link {% if request.path == '/docs' %}is-active{% endif %}" href="{{ url_for('docs') }}">
+        <svg style="width:16px;height:16px;"><use href="#i-doc"/></svg>
+        <span>Documentation</span>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<!-- Main Page Content -->
+<main class="page-container {% block container_class %}{% endblock %}">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <p>TruePrice Autonomous Consensus Simulation &bull; Zero External Dependencies &bull; eBay Protection Mechanics</p>
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

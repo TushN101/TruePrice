@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Configure Simulation — TruePrice{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="pill" style="margin-bottom: 12px;">
+    <span class="pill__dot"></span>
+    <span>Autonomous Consensus Engine</span>
+  </div>
+  <h1 class="heading-display">Crowd-Consensus Simulation Setup</h1>
+  <p class="subheading">Configure crowd sizing, adversarial attack vectors, and validation triggers to test how reputation defense holds up under pressure.</p>
+</div>
+
+<form id="simConfigForm">
+  <!-- Sizing & Archetypes -->
+  <div class="card">
+    <div class="card__title">1. Crowd Composition &amp; User Archetypes</div>
+    <p class="hint" style="margin-bottom: 18px;">Specify the participant population and the division between honest contributors, early imposters, and sleeper cells.</p>
+
+    <div class="grid grid--2">
+      <div>
+        <label class="label" for="total_users">Total User Accounts</label>
+        <input type="number" id="total_users" name="total_users" class="input" value="{{ defaults.total_users }}" min="10" max="2000" required>
+        <span class="hint">Total population submitting price observations</span>
+      </div>
+
+      <div>
+        <label class="label" for="imposter_count">Imposter Count</label>
+        <input type="number" id="imposter_count" name="imposter_count" class="input" value="{{ defaults.imposter_count }}" min="0" max="1000" required>
+        <span class="hint">Adversaries submitting poisoned prices from tick 1</span>
+      </div>
+
+      <div>
+        <label class="label" for="sleeper_cell_count">Sleeper Cell Count</label>
+        <input type="number" id="sleeper_cell_count" name="sleeper_cell_count" class="input" value="{{ defaults.sleeper_cell_count }}" min="0" max="1000" required>
+        <span class="hint">Honest-looking users that build trust, then turn malicious later</span>
+      </div>
+
+      <div>
+        <label class="label">Derived Honest Users</label>
+        <div class="derived-box">
+          <span style="font-size: var(--text-sm); color: var(--color-text-secondary);">Honest count:</span>
+          <strong id="derived_honest_users" style="font-size: var(--text-md); color: var(--color-accent);">{{ defaults.honest_users }}</strong>
+        </div>
+        <span class="hint">Calculated as total &minus; imposters &minus; sleepers</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product & Attacks -->
+  <div class="card">
+    <div class="card__title">2. Target Product &amp; Attack Vectors</div>
+    <p class="hint" style="margin-bottom: 18px;">Set the ground truth base price and the falsified prices submitted during attacks.</p>
+
+    <div class="grid grid--2">
+      <div>
+        <label class="label" for="fake_product_name">Target Product Name</label>
+        <input type="text" id="fake_product_name" name="fake_product_name" class="input" value="{{ defaults.fake_product_name }}" required>
+        <span class="hint">Item identity under observation</span>
+      </div>
+
+      <div>
+        <label class="label" for="base_price">True Market Price ($)</label>
+        <input type="number" step="0.01" id="base_price" name="base_price" class="input" value="{{ defaults.base_price }}" required>
+        <span class="hint">Starting authoritative market price</span>
+      </div>
+
+      <div>
+        <label class="label" for="fake_product_price">Poisoned / Fake Price ($)</label>
+        <input type="number" step="0.01" id="fake_product_price" name="fake_product_price" class="input" value="{{ defaults.fake_product_price }}" required>
+        <span class="hint">Price submitted by imposters & activated sleepers</span>
+      </div>
+
+      <div>
+        <label class="label" for="sleeper_activation_day">Sleeper Activation Day</label>
+        <input type="number" id="sleeper_activation_day" name="sleeper_activation_day" class="input" value="{{ defaults.sleeper_activation_day }}" min="0" max="60" required>
+        <span class="hint">Day in attack phase when sleepers turn malicious</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Behavior & Validation Thresholds -->
+  <div class="card">
+    <div class="card__title">3. Behavior &amp; Validation Protocol</div>
+    <p class="hint" style="margin-bottom: 18px;">Tune submission probabilities, human error margin, and consensus validation thresholds.</p>
+
+    <div class="grid grid--3">
+      <div>
+        <label class="label" for="participation_factor">Participation Factor (0 &ndash; 1)</label>
+        <input type="number" step="0.01" min="0.05" max="1.0" id="participation_factor" name="participation_factor" class="input" value="{{ defaults.participation_factor }}" required>
+        <span class="hint">Probability an arbitrary user submits each tick</span>
+      </div>
+
+      <div>
+        <label class="label" for="honest_error_rate">Honest Error Rate (0 &ndash; 1)</label>
+        <input type="number" step="0.01" min="0.0" max="1.0" id="honest_error_rate" name="honest_error_rate" class="input" value="{{ defaults.honest_error_rate }}" required>
+        <span class="hint">Frequency of accidental mistakes by honest users</span>
+      </div>
+
+      <div>
+        <label class="label" for="honest_error_margin_percent">Honest Error Margin</label>
+        <input type="number" step="0.01" min="0.01" max="1.0" id="honest_error_margin_percent" name="honest_error_margin_percent" class="input" value="{{ defaults.honest_error_margin_percent }}" required>
+        <span class="hint">How far off an honest error can be (e.g. 10%)</span>
+      </div>
+
+      <div>
+        <label class="label" for="consensus_threshold">Consensus Threshold</label>
+        <input type="number" step="0.01" min="0.1" max="1.0" id="consensus_threshold" name="consensus_threshold" class="input" value="{{ defaults.consensus_threshold }}" required>
+        <span class="hint">Agreement needed to accept crowd price</span>
+      </div>
+
+      <div>
+        <label class="label" for="seed_history_days">Seed History Days</label>
+        <input type="number" id="seed_history_days" name="seed_history_days" class="input" value="{{ defaults.seed_history_days }}" min="1" max="60" required>
+        <span class="hint">Honest warm-up phase to establish initial trust</span>
+      </div>
+
+      <div>
+        <label class="label" for="simulation_days">Simulation Days (Attack Phase)</label>
+        <input type="number" id="simulation_days" name="simulation_days" class="input" value="{{ defaults.simulation_days }}" min="1" max="90" required>
+        <span class="hint">Length of the adversarial attack window</span>
+      </div>
+
+      <div>
+        <label class="label" for="seed">Random Seed</label>
+        <input type="number" id="seed" name="seed" class="input" value="{{ defaults.seed }}" required>
+        <span class="hint">Same seed = identical byte-for-byte run</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-group" style="margin-top: 24px;">
+    <button type="submit" id="btnCustom" class="btn btn--primary btn--lg">Launch Simulation &rarr;</button>
+    <button type="button" id="btnDefaults" class="btn btn--secondary btn--lg">Start with Defaults</button>
+    <a href="{{ url_for('docs') }}" class="btn btn--ghost" style="margin-left: auto;">Read Formulas &amp; Math &rarr;</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const totalInput = document.getElementById('total_users');
+  const imposterInput = document.getElementById('imposter_count');
+  const sleeperInput = document.getElementById('sleeper_cell_count');
+  const derivedEl = document.getElementById('derived_honest_users');
+
+  function updateHonest() {
+    const total = parseInt(totalInput.value) || 0;
+    const imp = parseInt(imposterInput.value) || 0;
+    const slp = parseInt(sleeperInput.value) || 0;
+    const honest = total - imp - slp;
+    derivedEl.textContent = honest;
+    if (honest < 0) {
+      derivedEl.style.color = 'var(--color-danger)';
+    } else {
+      derivedEl.style.color = 'var(--color-accent)';
+    }
+  }
+
+  totalInput.addEventListener('input', updateHonest);
+  imposterInput.addEventListener('input', updateHonest);
+  sleeperInput.addEventListener('input', updateHonest);
+
+  async function launchSimulation(configData) {
+    try {
+      const resp = await fetch('/api/simulations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configData)
+      });
+      const data = await resp.json();
+      if (resp.ok && data.redirect_url) {
+        window.location.href = data.redirect_url;
+      } else {
+        alert("Configuration Error: " + (data.error || "Unknown error"));
+      }
+    } catch (err) {
+      alert("Network error: " + err.message);
+    }
+  }
+
+  document.getElementById('btnDefaults').addEventListener('click', () => {
+    launchSimulation({
+      seed: 42,
+      total_users: 200,
+      imposter_count: 30,
+      sleeper_cell_count: 20,
+      sleeper_activation_day: 10,
+      participation_factor: 0.70,
+      honest_error_rate: 0.15,
+      honest_error_margin_percent: 0.10,
+      fake_product_name: "SuperWidget Pro Max",
+      fake_product_price: 99.0,
+      base_price: 200.0,
+      seed_history_days: 7,
+      simulation_days: 14,
+      consensus_threshold: 0.80
+    });
+  });
+
+  document.getElementById('simConfigForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const config = Object.fromEntries(formData.entries());
+    launchSimulation(config);
+  });
+</script>
+{% endblock %}

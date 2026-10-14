@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Claude-inspired Design System</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Demo-only layout (not part of the design system) */
+    .hero { padding: 72px 0 40px; text-align: center; }
+    .hero .pill { margin-bottom: 40px; }
+    .hero__title { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-serif); font-size: var(--text-2xl); letter-spacing: -0.015em; margin-bottom: 32px; }
+    .hero__title svg { color: var(--color-accent); width: 32px; height: 32px; }
+    .hero .composer { text-align: left; }
+    .section { padding: 24px 0; }
+    .grid { display: grid; gap: var(--space-4); }
+    .grid--3 { grid-template-columns: repeat(3, 1fr); }
+    .grid--2 { grid-template-columns: repeat(2, 1fr); }
+    .grid--6 { grid-template-columns: repeat(6, 1fr); }
+    .topbar { position: absolute; top: 16px; right: 20px; }
+    @media (max-width: 800px) { .sidebar { display: none; } .grid--3, .grid--2 { grid-template-columns: 1fr; } .grid--6 { grid-template-columns: repeat(3, 1fr); } }
+  </style>
+</head>
+<body>
+
+<!-- Inline SVG icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M4 7h16M6 4h12M5 10h14v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-shapes" viewBox="0 0 24 24"><circle cx="7.5" cy="16.5" r="3.5"/><rect x="13" y="3.5" width="7" height="7" rx="1.5"/><path d="m7.5 4 3.5 6H4z"/></symbol>
+    <symbol id="i-brief" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+    <symbol id="i-ghost" viewBox="0 0 24 24"><path d="M5 20V11a7 7 0 0 1 14 0v9l-3-2-2 2-2-2-2 2-2-2z"/><path d="M9.5 11h.01M14.5 11h.01"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M5 5l14 14M19 5 5 19"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <!-- ===================== Sidebar ===================== -->
+  <aside class="sidebar">
+    <div class="sidebar__header">
+      <button class="btn btn--ghost btn--icon btn--sm" aria-label="Toggle sidebar">
+        <svg class="icon icon--sm"><use href="#i-sidebar"/></svg>
+      </button>
+      <span class="sidebar__brand">Claude</span>
+    </div>
+
+    <div class="search" style="margin-bottom: 12px;">
+      <svg class="icon icon--sm search__icon"><use href="#i-search"/></svg>
+      <input class="input" type="search" placeholder="Search" aria-label="Search" />
+    </div>
+
+    <div class="sidebar__scroll">
+      <nav class="sidebar__group">
+        <a class="nav-item is-active" href="#"><svg class="icon nav-item__icon"><use href="#i-plus"/></svg><span class="nav-item__text">New</span></a>
+        <a class="nav-item" href="#"><svg class="icon nav-item__icon"><use href="#i-folder"/></svg><span class="nav-item__text">Projects</span></a>
+        <a class="nav-item" href="#"><svg class="icon nav-item__icon"><use href="#i-shapes"/></svg><span class="nav-item__text">Artifacts</span></a>
+        <a class="nav-item" href="#"><svg class="icon nav-item__icon"><use href="#i-brief"/></svg><span class="nav-item__text">Customize</span></a>
+      </nav>
+
+      <div class="sidebar__group">
+        <div class="sidebar__label"><span>Oct 8</span><svg class="icon icon--sm"><use href="#i-sliders"/></svg></div>
+        <a class="nav-item nav-item--chat" href="#"><span class="nav-item__text">LLD design patterns notes</span><svg class="icon icon--sm text-faint"><use href="#i-doc"/></svg></a>
+        <a class="nav-item nav-item--chat" href="#"><span class="nav-item__text">Chat.z.ai Claude interface reskin</span></a>
+      </div>
+
+      <div class="sidebar__group">
+        <div class="sidebar__label"><span>Oct 6</span></div>
+        <a class="nav-item nav-item--chat" href="#"><span class="nav-item__text">Format notes for Obsidian</span><svg class="icon icon--sm text-faint"><use href="#i-doc"/></svg></a>
+      </div>
+
+      <div class="sidebar__group">
+        <div class="sidebar__label"><span>Older</span></div>
+        <a class="nav-item nav-item--chat" href="#"><span class="nav-item__text">Organizing Obsidian notes in markdown</span></a>
+        <a class="nav-item nav-item--chat" href="#"><span class="nav-item__text">LangChain notebook assignment</span></a>
+        <a class="nav-item nav-item--chat" href="#"><span class="nav-item__text">Morgan Stanley OA preparation guide</span></a>
+        <a class="nav-item nav-item--chat" href="#"><span class="nav-item__text">Resume formatting and LaTeX fixes</span></a>
+        <a class="nav-item nav-item--chat" href="#"><span class="nav-item__text">Modern website redesign</span></a>
+      </div>
+    </div>
+
+    <div class="sidebar__footer">
+      <button class="nav-item" style="padding: 4px;">
+        <span class="avatar">T</span>
+        <span class="nav-item__text">Tush <span class="text-muted">· Free</span></span>
+        <svg class="icon icon--sm text-muted"><use href="#i-chevron"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===================== Main ===================== -->
+  <main class="main">
+    <button class="btn btn--ghost btn--icon topbar" aria-label="Incognito chat"><svg class="icon"><use href="#i-ghost"/></svg></button>
+
+    <div class="container">
+
+      <!-- Hero: pill + greeting + composer -->
+      <section class="hero">
+        <div class="pill"><span>Free plan</span><span class="pill__dot">·</span><a href="#">Upgrade</a></div>
+
+        <h1 class="hero__title">
+          <svg viewBox="0 0 24 24" class="icon" style="stroke-width:2"><use href="#i-spark"/></svg>
+          Welcome, Tush
+        </h1>
+
+        <div class="composer">
+          <textarea class="composer__input" rows="2" placeholder="How can I help you today?"></textarea>
+          <div class="composer__bar">
+            <div class="composer__tools">
+              <button class="btn btn--ghost btn--icon" aria-label="Add"><svg class="icon"><use href="#i-plus"/></svg></button>
+            </div>
+            <button class="btn btn--send" aria-label="Send"><svg class="icon"><use href="#i-arrow-up"/></svg></button>
+          </div>
+        </div>
+        <div class="composer-footer">
+          <details class="dropdown dropdown--up">
+            <summary class="dropdown__trigger">Project <svg class="icon icon--sm"><use href="#i-chevron"/></svg></summary>
+            <div class="dropdown__menu">
+              <button class="dropdown__item is-selected">No project</button>
+              <button class="dropdown__item">Website redesign</button>
+              <button class="dropdown__item">Interview prep</button>
+            </div>
+          </details>
+          <div class="composer__meta"><strong>Sonnet 5.5</strong><span>Medium</span><span>Manual</span></div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- Color tokens -->
+      <section class="section">
+        <h2 class="heading-section">Colors</h2>
+        <div class="grid grid--6">
+          <div><div class="swatch" style="background:var(--color-bg)"></div><div class="swatch-label">bg</div></div>
+          <div><div class="swatch" style="background:var(--color-bg-sidebar)"></div><div class="swatch-label">sidebar</div></div>
+          <div><div class="swatch" style="background:var(--color-surface)"></div><div class="swatch-label">surface</div></div>
+          <div><div class="swatch" style="background:var(--color-surface-hover)"></div><div class="swatch-label">hover</div></div>
+          <div><div class="swatch" style="background:var(--color-accent)"></div><div class="swatch-label">accent</div></div>
+          <div><div class="swatch" style="background:var(--color-text)"></div><div class="swatch-label">text</div></div>
+        </div>
+      </section>
+
+      <!-- Typography -->
+      <section class="section">
+        <h2 class="heading-section">Typography</h2>
+        <div class="card stack">
+          <h3 class="heading-display">Serif display heading</h3>
+          <p>Body copy uses the sans stack at 14px with a 1.5 line height. <a href="#">This is a link</a> and <code>inline code</code>.</p>
+          <p class="text-muted text-sm">Muted secondary text at 13px for descriptions and metadata.</p>
+          <p class="text-faint text-xs">Faint caption text at 12px.</p>
+        </div>
+      </section>
+
+      <!-- Buttons -->
+      <section class="section">
+        <h2 class="heading-section">Buttons</h2>
+        <div class="stack">
+          <div class="row">
+            <button class="btn btn--primary">Primary</button>
+            <button class="btn btn--dark">Dark</button>
+            <button class="btn btn--secondary">Secondary</button>
+            <button class="btn btn--ghost">Ghost</button>
+            <button class="btn btn--danger">Danger</button>
+            <button class="btn btn--primary" disabled>Disabled</button>
+          </div>
+          <div class="row">
+            <button class="btn btn--primary btn--sm">Small</button>
+            <button class="btn btn--secondary">Default</button>
+            <button class="btn btn--primary btn--lg">Large</button>
+            <button class="btn btn--secondary btn--icon" aria-label="Add"><svg class="icon"><use href="#i-plus"/></svg></button>
+            <button class="btn btn--send" aria-label="Send"><svg class="icon"><use href="#i-arrow-up"/></svg></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Inputs -->
+      <section class="section">
+        <h2 class="heading-section">Inputs</h2>
+        <div class="grid grid--2">
+          <div>
+            <label class="label" for="name">Text input</label>
+            <input id="name" class="input" type="text" placeholder="Your name" />
+          </div>
+          <div>
+            <label class="label" for="err">Invalid</label>
+            <input id="err" class="input is-invalid" type="text" value="Something wrong" />
+          </div>
+          <div>
+            <label class="label" for="sel">Select</label>
+            <select id="sel" class="select"><option>Sonnet 5.5</option><option>Opus 5.5</option><option>Haiku 5.5</option></select>
+          </div>
+          <div>
+            <label class="label" for="dis">Disabled</label>
+            <input id="dis" class="input" type="text" value="Not editable" disabled />
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <label class="label" for="ta">Textarea</label>
+            <textarea id="ta" class="textarea" placeholder="Write something..."></textarea>
+          </div>
+          <div>
+            <label class="label">Search</label>
+            <div class="search"><svg class="icon icon--sm search__icon"><use href="#i-search"/></svg><input class="input" type="search" placeholder="Search chats" /></div>
+          </div>
+          <div class="stack">
+            <label class="check"><input type="checkbox" checked /> Checkbox</label>
+            <label class="row" style="gap:10px"><span class="toggle"><input type="checkbox" checked /><span class="toggle__track"></span></span> Toggle</label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dropdowns, pills, tabs -->
+      <section class="section">
+        <h2 class="heading-section">Dropdowns, pills &amp; tabs</h2>
+        <div class="row" style="align-items:flex-start; min-height: 190px;">
+          <details class="dropdown">
+            <summary class="dropdown__trigger dropdown__trigger--field">Choose model <svg class="icon icon--sm"><use href="#i-chevron"/></svg></summary>
+            <div class="dropdown__menu">
+              <button class="dropdown__item is-selected"><span>Sonnet 5.5<small>Smart, efficient</small></span></button>
+              <button class="dropdown__item"><span>Opus 5.5<small>Most capable</small></span></button>
+              <button class="dropdown__item"><span>Haiku 5.5<small>Fastest</small></span></button>
+              <div class="dropdown__sep"></div>
+              <a class="dropdown__item" href="#">More models</a>
+            </div>
+          </details>
+
+          <div class="tabs" role="tablist">
+            <button class="tab is-active" role="tab">Chats</button>
+            <button class="tab" role="tab">Projects</button>
+            <button class="tab" role="tab">Artifacts</button>
+          </div>
+
+          <span class="badge">Default</span>
+          <span class="badge badge--accent">New</span>
+          <span class="badge badge--success">Active</span>
+        </div>
+      </section>
+
+      <!-- Cards -->
+      <section class="section" style="padding-bottom: 80px;">
+        <h2 class="heading-section">Cards</h2>
+        <div class="grid grid--3">
+          <div class="card card--interactive"><div class="card__title">Projects</div><p class="text-muted text-sm">Keep chats and files together.</p></div>
+          <div class="card card--interactive"><div class="card__title">Artifacts</div><p class="text-muted text-sm">Build and preview your work.</p></div>
+          <div class="card card--interactive"><div class="card__title">Customize</div><p class="text-muted text-sm">Tune styles and preferences.</p></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

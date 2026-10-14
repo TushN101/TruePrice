@@ -129,11 +129,15 @@ async function getCurrentPagePrice() {
 // ─── Chart rendering ───────────────────────────────────────────────────
 
 function renderSinglePrice(price) {
+    if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+    }
     showContent();
     document.getElementById("productLabel").innerText = "Live Page Price";
     document.getElementById("currentPrice").innerText = "$" + Number(price).toLocaleString("en-US");
     const changeEl = document.getElementById("priceChange");
-    changeEl.className = "priceBadge badge-accent";
+    changeEl.className = "priceBadge badge badge-accent";
     changeEl.innerText = "LIVE";
     document.getElementById("minStat").innerText = "—";
     document.getElementById("maxStat").innerText = "—";
@@ -188,16 +192,16 @@ function renderHistory(history) {
     // Price change badge
     const changeEl = document.getElementById("priceChange");
     if (prices.length === 1) {
-        changeEl.className = "priceBadge badge-accent";
+        changeEl.className = "priceBadge badge badge-accent";
         changeEl.innerText = "NEW";
     } else if (pctChange < -0.5) {
-        changeEl.className = "priceBadge badge-green";
-        changeEl.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>${Math.abs(pctChange).toFixed(1)}%`;
+        changeEl.className = "priceBadge badge badge-green";
+        changeEl.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>${Math.abs(pctChange).toFixed(1)}%`;
     } else if (pctChange > 0.5) {
-        changeEl.className = "priceBadge badge-red";
-        changeEl.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>${pctChange.toFixed(1)}%`;
+        changeEl.className = "priceBadge badge badge-red";
+        changeEl.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>${pctChange.toFixed(1)}%`;
     } else {
-        changeEl.className = "priceBadge badge-neutral";
+        changeEl.className = "priceBadge badge badge-neutral";
         changeEl.innerText = "0.0%";
     }
 
@@ -215,11 +219,11 @@ function renderHistory(history) {
     const fillEl = document.getElementById("confidenceFill");
     fillEl.style.width = confPct + "%";
     if (avgConf >= 0.8) {
-        fillEl.style.background = "var(--green)";
+        fillEl.style.background = "var(--color-success)";
     } else if (avgConf >= 0.6) {
-        fillEl.style.background = "var(--accent)";
+        fillEl.style.background = "var(--color-accent)";
     } else {
-        fillEl.style.background = "var(--red)";
+        fillEl.style.background = "var(--color-danger)";
     }
 
     // Chart meta
@@ -229,9 +233,9 @@ function renderHistory(history) {
 
     // Chart
     const ctx = document.getElementById("priceChart").getContext("2d");
-    let gradient = ctx.createLinearGradient(0, 0, 0, 200);
-    gradient.addColorStop(0, "rgba(245, 158, 11, 0.2)");
-    gradient.addColorStop(1, "rgba(245, 158, 11, 0.0)");
+    let gradient = ctx.createLinearGradient(0, 0, 0, 140);
+    gradient.addColorStop(0, "rgba(198, 97, 63, 0.14)");
+    gradient.addColorStop(1, "rgba(198, 97, 63, 0.0)");
 
     if (chartInstance) {
         chartInstance.destroy();
@@ -249,16 +253,16 @@ function renderHistory(history) {
             labels: labels,
             datasets: [{
                 data: prices,
-                borderColor: "#f59e0b",
+                borderColor: "#c6613f",
                 backgroundColor: gradient,
                 borderWidth: 2,
                 pointBackgroundColor: (c) => {
                     const i = c.dataIndex;
-                    if (i === minIndex) return "#10b981";
-                    if (i === maxIndex) return "#ef4444";
-                    return "#f59e0b";
+                    if (i === minIndex) return "#2f7d4f";
+                    if (i === maxIndex) return "#b53333";
+                    return "#c6613f";
                 },
-                pointBorderColor: "#1c1c20",
+                pointBorderColor: "#ffffff",
                 pointBorderWidth: (c) => {
                     const i = c.dataIndex;
                     return (i === minIndex || i === maxIndex) ? 2 : 0;
@@ -277,20 +281,20 @@ function renderHistory(history) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { right: 8, top: 4 } },
+            layout: { padding: { right: 8, top: 4, bottom: 2 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: "#18181b",
-                    titleColor: "#a1a1aa",
-                    bodyColor: "#f4f4f5",
-                    borderColor: "#2a2a30",
+                    backgroundColor: "#ffffff",
+                    titleColor: "#73726c",
+                    bodyColor: "#141413",
+                    borderColor: "#e6e4da",
                     borderWidth: 1,
-                    padding: 10,
-                    cornerRadius: 8,
+                    padding: 8,
+                    cornerRadius: 6,
                     displayColors: false,
-                    titleFont: { family: "Inter", size: 10, weight: "600" },
-                    bodyFont: { family: "JetBrains Mono", size: 12, weight: "700" },
+                    titleFont: { family: '"Anthropic Sans", system-ui, sans-serif', size: 10, weight: "500" },
+                    bodyFont: { family: 'ui-monospace, monospace', size: 12, weight: "600" },
                     callbacks: {
                         label: (context) => {
                             const i = context.dataIndex;
@@ -311,17 +315,17 @@ function renderHistory(history) {
                     border: { display: false },
                     ticks: {
                         maxTicksLimit: 4,
-                        color: "#71717a",
-                        font: { family: "Inter", size: 9 },
+                        color: "#9c9a92",
+                        font: { family: '"Anthropic Sans", system-ui, sans-serif', size: 9 },
                     },
                 },
                 y: {
                     border: { display: false },
-                    grid: { color: "rgba(255,255,255,0.04)" },
+                    grid: { color: "rgba(230, 228, 218, 0.7)" },
                     ticks: {
                         maxTicksLimit: 4,
-                        color: "#71717a",
-                        font: { family: "JetBrains Mono", size: 9 },
+                        color: "#9c9a92",
+                        font: { family: 'ui-monospace, monospace', size: 9 },
                         callback: (v) => "$" + v,
                     },
                     min: yMin,

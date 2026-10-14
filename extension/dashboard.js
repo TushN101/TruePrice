@@ -4,7 +4,7 @@
  * Reads the list of tracked eBay item IDs from chrome.storage.local
  * (populated by content.js), fetches each product's price history via
  * the background worker, and renders a card with a mini Chart.js line
- * chart per product.
+ * chart per product matching the Claude-inspired design system.
  */
 
 function formatPrice(value) {
@@ -40,7 +40,9 @@ function fetchHistory(itemId) {
 
 function buildCard({ itemId, title, history }) {
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = "card card--interactive";
+    card.setAttribute("data-item-id", itemId);
+    card.setAttribute("data-title", (title || "").toLowerCase());
 
     const top = document.createElement("div");
     top.className = "top";
@@ -77,9 +79,9 @@ function buildCard({ itemId, title, history }) {
     stats.className = "stats";
 
     const openBtn = document.createElement("button");
-    openBtn.className = "btn";
+    openBtn.className = "btn btn--secondary btn--sm";
     openBtn.type = "button";
-    openBtn.innerText = "Open on eBay";
+    openBtn.innerHTML = `<span>View on eBay</span><svg class="icon icon--sm" style="width:12px;height:12px;"><use href="#i-arrow-up-right"/></svg>`;
     openBtn.addEventListener("click", () => openOnEbay(itemId));
 
     actionsRow.appendChild(stats);
@@ -125,14 +127,10 @@ function buildCard({ itemId, title, history }) {
     }
 
     const ctx = canvas.getContext("2d");
-    const theme = getComputedStyle(document.body);
-    const chartLine = theme.getPropertyValue("--chart-1").trim() || "#3794ff";
-    const chartMin = theme.getPropertyValue("--chart-2").trim() || "#4ec9b0";
-    const chartMax = theme.getPropertyValue("--destructive").trim() || "#f14c4c";
 
-    const gradient = ctx.createLinearGradient(0, 0, 0, 160);
-    gradient.addColorStop(0, "rgba(0, 0, 0, 0.18)");
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0.00)");
+    const gradient = ctx.createLinearGradient(0, 0, 0, 140);
+    gradient.addColorStop(0, "rgba(198, 97, 63, 0.12)");
+    gradient.addColorStop(1, "rgba(198, 97, 63, 0.00)");
 
     const spread = max - min;
     const padding = Math.max(spread * 0.10, Math.max(25, (Number.isFinite(lastPrice) ? lastPrice : 0) * 0.02));
@@ -145,9 +143,9 @@ function buildCard({ itemId, title, history }) {
             labels,
             datasets: [{
                 data: prices,
-                borderColor: chartLine,
+                borderColor: "#c6613f",
                 backgroundColor: gradient,
-                borderWidth: 2.25,
+                borderWidth: 2,
                 fill: true,
                 tension: 0.3,
                 pointRadius: (c) => {
@@ -158,23 +156,34 @@ function buildCard({ itemId, title, history }) {
                 pointHoverRadius: 5,
                 pointBorderWidth: (c) => {
                     const i = c.dataIndex;
-                    return (i === minIndex || i === maxIndex) ? 2.25 : 0;
+                    return (i === minIndex || i === maxIndex) ? 2 : 0;
                 },
-                pointBorderColor: (c) => {
+                pointBorderColor: "#ffffff",
+                pointBackgroundColor: (c) => {
                     const i = c.dataIndex;
-                    if (i === minIndex) return chartMin;
-                    if (i === maxIndex) return chartMax;
-                    return chartLine;
+                    if (i === minIndex) return "#2f7d4f";
+                    if (i === maxIndex) return "#b53333";
+                    return "#c6613f";
                 },
-                pointBackgroundColor: "#ffffff",
             }],
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 4, bottom: 2, left: 2, right: 2 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
+                    backgroundColor: "#ffffff",
+                    titleColor: "#73726c",
+                    bodyColor: "#141413",
+                    borderColor: "#e6e4da",
+                    borderWidth: 1,
+                    padding: 8,
+                    cornerRadius: 6,
+                    displayColors: false,
+                    titleFont: { family: '"Anthropic Sans", system-ui, sans-serif', size: 10, weight: "500" },
+                    bodyFont: { family: 'ui-monospace, monospace', size: 12, weight: "600" },
                     callbacks: {
                         label: (c) => formatPrice(c.parsed.y),
                     },
@@ -190,12 +199,51 @@ function buildCard({ itemId, title, history }) {
     return card;
 }
 
+function renderEmptyState(type = "initial") {
+    const empty = document.getElementById("empty");
+    if (!empty) return;
+    empty.style.display = "flex";
+
+    if (type === "search") {
+        empty.innerHTML = `
+            <div class="empty-icon">
+                <svg class="icon icon--lg"><use href="#i-search"/></svg>
+            </div>
+            <h3 class="heading-display" style="font-size: 1.15rem; margin-bottom: 4px;">No matching items</h3>
+            <p class="text-muted text-sm" style="max-width: 320px;">
+                No tracked products matched your search term.
+            </p>
+        `;
+    } else {
+        empty.innerHTML = `
+            <div class="empty-icon">
+                <svg class="icon icon--lg"><use href="#i-spark"/></svg>
+            </div>
+            <h3 class="heading-display" style="font-size: 1.15rem; margin-bottom: 4px;">No tracked products yet</h3>
+            <p class="text-muted text-sm" style="max-width: 380px; margin-bottom: 16px;">
+                Browse eBay product pages in Chrome. TruePrice will automatically record price observations and compute consensus histories.
+            </p>
+            <a href="https://www.ebay.com" target="_blank" rel="noopener noreferrer" class="btn btn--secondary btn--sm">
+                <span>Browse eBay</span>
+                <svg class="icon icon--sm"><use href="#i-arrow-up-right"/></svg>
+            </a>
+        `;
+    }
+}
+
 async function loadDashboard() {
     const grid = document.getElementById("grid");
     const empty = document.getElementById("empty");
+    const statusMsg = document.getElementById("statusMessage");
+    const tabCount = document.getElementById("tabCount");
+    const sidebarCount = document.getElementById("sidebarProductCount");
+
     grid.innerHTML = "";
-    empty.style.display = "block";
-    empty.innerText = "Loading tracked prices...";
+    if (empty) {
+        empty.style.display = "flex";
+        empty.innerHTML = `<p class="text-muted text-sm">Loading tracked prices...</p>`;
+    }
+    if (statusMsg) statusMsg.innerText = "Syncing...";
 
     const result = await new Promise((resolve) => {
         chrome.storage.local.get(["itemIds", "productNames"], resolve);
@@ -204,7 +252,10 @@ async function loadDashboard() {
     const productNames = result.productNames || {};
 
     if (itemIds.length === 0) {
-        empty.innerText = "No tracked products yet. Browse eBay product pages to start collecting prices.";
+        renderEmptyState("initial");
+        if (statusMsg) statusMsg.innerText = "0 products";
+        if (tabCount) tabCount.innerText = "0";
+        if (sidebarCount) sidebarCount.innerText = "0";
         return;
     }
 
@@ -226,11 +277,42 @@ async function loadDashboard() {
     }
 
     if (renderedCount === 0) {
-        empty.innerText = "No price history available yet. Reopen product pages to trigger computation.";
-        empty.style.display = "block";
+        renderEmptyState("initial");
     } else {
-        empty.style.display = "none";
+        if (empty) empty.style.display = "none";
     }
+
+    if (statusMsg) statusMsg.innerText = `${renderedCount} tracked`;
+    if (tabCount) tabCount.innerText = String(renderedCount);
+    if (sidebarCount) sidebarCount.innerText = String(renderedCount);
+}
+
+// ─── Search filter ─────────────────────────────────────────────────────
+
+const searchInput = document.getElementById("searchInput");
+if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        const cards = document.querySelectorAll("#grid .card");
+        let visibleCount = 0;
+
+        cards.forEach((card) => {
+            const title = card.getAttribute("data-title") || "";
+            const itemId = card.getAttribute("data-item-id") || "";
+            const match = !query || title.includes(query) || itemId.includes(query);
+            card.style.display = match ? "flex" : "none";
+            if (match) visibleCount++;
+        });
+
+        const empty = document.getElementById("empty");
+        if (cards.length > 0) {
+            if (visibleCount === 0) {
+                renderEmptyState("search");
+            } else if (empty) {
+                empty.style.display = "none";
+            }
+        }
+    });
 }
 
 loadDashboard();

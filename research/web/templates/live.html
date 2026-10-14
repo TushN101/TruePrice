@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Live Simulation Dashboard — TruePrice{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+  <div>
+    <h1 class="heading-display">Live Simulation Dashboard</h1>
+    <p class="subheading" style="margin-bottom: 0;">Monitoring live hourly consensus and trust adjustments for <strong>{{ config.fake_product_name }}</strong></p>
+  </div>
+  <div id="phaseBadgeContainer">
+    <span id="phaseBadge" class="badge badge--accent" style="font-size: var(--text-sm); padding: 5px 14px;">
+      Seed Phase (Honest Warm-Up)
+    </span>
+  </div>
+</div>
+
+<!-- Controls Bar -->
+<div class="live-bar">
+  <div class="btn-group">
+    <button id="btnPlayPause" class="btn btn--primary">⏸ Pause</button>
+    <button id="btnStep" class="btn btn--secondary">⏭ Step 1h</button>
+    <button id="btnFastForward" class="btn btn--dark">⚡ Fast-Forward to End</button>
+  </div>
+  <div style="display: flex; align-items: center; gap: 10px; font-size: var(--text-sm); color: var(--color-text-secondary);">
+    <label for="speedSelect" style="font-weight: 500;">Playback Speed:</label>
+    <select id="speedSelect" class="select" style="width: 150px; height: 36px;">
+      <option value="150">Normal (150ms)</option>
+      <option value="50" selected>Fast (50ms)</option>
+      <option value="15">Turbo (15ms)</option>
+    </select>
+  </div>
+</div>
+
+<!-- Live Metrics Strip (Clear, no information overflow) -->
+<div class="live-metrics-strip">
+  <div class="metric-tile">
+    <span class="metric-tile__label">Simulation Time</span>
+    <span id="counterTimeline" class="metric-tile__value">Hour 0</span>
+    <span id="counterSubTimeline" class="metric-tile__sub">Day 0 &bull; Total: {{ config.total_ticks }}h</span>
+  </div>
+
+  <div class="metric-tile">
+    <span class="metric-tile__label">Hourly Submissions</span>
+    <span id="counterSubmissions" class="metric-tile__value">0</span>
+    <span class="metric-tile__sub">Active clients this tick</span>
+  </div>
+
+  <div class="metric-tile">
+    <span class="metric-tile__label">Validation Status</span>
+    <span id="counterValidation" class="metric-tile__value" style="font-size: 1.4rem;">Evaluating...</span>
+    <span id="counterCumulativeVal" class="metric-tile__sub">Cumulative: 0</span>
+  </div>
+
+  <div class="metric-tile">
+    <span class="metric-tile__label">Consensus Agreement</span>
+    <span id="counterConfidence" class="metric-tile__value">0.0%</span>
+    <span id="counterTrustedRatio" class="metric-tile__sub">Trusted crowd ratio: 0.0%</span>
+  </div>
+</div>
+
+<!-- Finished Callout Banner -->
+<div id="finishedBanner" class="verdict-banner verdict-banner--success" style="display: none;">
+  <div class="verdict-banner__icon">
+    <svg style="width:20px;height:20px;"><use href="#i-check"/></svg>
+  </div>
+  <div class="verdict-banner__content">
+    <h2>Simulation Complete</h2>
+    <p class="verdict-banner__text" style="margin-bottom: 14px;">All {{ config.total_ticks }} hours have executed. The complete defense audit is compiled.</p>
+    <a id="btnViewReport" href="{{ url_for('report_page', run_id=run_id) }}" class="btn btn--primary btn--lg">Open Final Audit Report &rarr;</a>
+  </div>
+</div>
+
+<!-- Hero Chart Card (Big, Wide, Prominent) -->
+<div class="hero-chart-card">
+  <div class="card__title">
+    <span>Price Stream: Known Actual Price vs Crowd Prediction</span>
+    <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-sans); font-weight: normal;">Live 504-hour trajectory</span>
+  </div>
+  <div class="chart-wrapper-hero">
+    <canvas id="livePriceChart"></canvas>
+  </div>
+</div>
+
+<!-- Top 20 Users Ranking Section -->
+<div class="card">
+  <div class="card__title">
+    <span>Top 20 Clients Ranked by Reputation</span>
+    <div style="display: flex; gap: 8px;">
+      <span class="badge badge--success">Honest</span>
+      <span class="badge badge--danger">Imposter</span>
+      <span class="badge badge--warning">Sleeper (Dormant)</span>
+      <span class="badge badge--danger">Sleeper (Active)</span>
+    </div>
+  </div>
+  <p class="hint" style="margin-bottom: 16px;">Verifies whether adversarial attackers ever penetrate the highest-trusted ranks.</p>
+
+  <div class="table-wrapper">
+    <table id="topUsersTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Client ID</th>
+          <th>Archetype</th>
+          <th>Trust Rating</th>
+        </tr>
+      </thead>
+      <tbody id="topUsersTbody">
+        <tr><td colspan="4" style="text-align: center; color: var(--color-text-muted);">Initializing participants...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.SIMULATION_RUN_ID = "{{ run_id }}";
+  window.ATTACK_START_TICK = {{ config.attack_start_tick }};
+  window.TOTAL_TICKS = {{ config.total_ticks }};
+  window.REPORT_URL = "{{ url_for('report_page', run_id=run_id) }}";
+</script>
+<script src="{{ url_for('static', filename='js/live.js') }}"></script>
+{% endblock %}

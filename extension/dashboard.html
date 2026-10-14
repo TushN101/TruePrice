@@ -4,244 +4,117 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TruePrice Dashboard</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
   <script src="chart.js"></script>
-
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --background: oklch(1.0000 0 0);
-      --foreground: oklch(0.2101 0.0318 264.6645);
-      --card: oklch(1.0000 0 0);
-      --card-foreground: oklch(0.2101 0.0318 264.6645);
-      --popover: oklch(1.0000 0 0);
-      --popover-foreground: oklch(0.2101 0.0318 264.6645);
-      --primary: oklch(0.6716 0.1368 48.5130);
-      --primary-foreground: oklch(1.0000 0 0);
-      --secondary: oklch(0.5360 0.0398 196.0280);
-      --secondary-foreground: oklch(1.0000 0 0);
-      --muted: oklch(0.9670 0.0029 264.5419);
-      --muted-foreground: oklch(0.5510 0.0234 264.3637);
-      --accent: oklch(0.9491 0 0);
-      --accent-foreground: oklch(0.2101 0.0318 264.6645);
-      --destructive: oklch(0.6368 0.2078 25.3313);
-      --destructive-foreground: oklch(0.9851 0 0);
-      --border: oklch(0.9276 0.0058 264.5313);
-      --input: oklch(0.9276 0.0058 264.5313);
-      --ring: oklch(0.6716 0.1368 48.5130);
-      --chart-1: oklch(0.5940 0.0443 196.0233);
-      --chart-2: oklch(0.7214 0.1337 49.9802);
-      --chart-3: oklch(0.8721 0.0864 68.5474);
-      --chart-4: oklch(0.6268 0 0);
-      --chart-5: oklch(0.6830 0 0);
-      --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-      --font-mono: "JetBrains Mono", ui-monospace, monospace;
-      --font-ui: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      --radius: 0.75rem;
-      --tracking-normal: 0rem;
-      --shadow: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
-    }
-
-    .dark {
-      --background: oklch(0.1797 0.0043 308.1928);
-      --foreground: oklch(0.8109 0 0);
-      --card: oklch(0.1822 0 0);
-      --card-foreground: oklch(0.8109 0 0);
-      --popover: oklch(0.1797 0.0043 308.1928);
-      --popover-foreground: oklch(0.8109 0 0);
-      --primary: oklch(0.7214 0.1337 49.9802);
-      --primary-foreground: oklch(0.1797 0.0043 308.1928);
-      --secondary: oklch(0.5940 0.0443 196.0233);
-      --secondary-foreground: oklch(0.1797 0.0043 308.1928);
-      --muted: oklch(0.2520 0 0);
-      --muted-foreground: oklch(0.6268 0 0);
-      --accent: oklch(0.3211 0 0);
-      --accent-foreground: oklch(0.8109 0 0);
-      --destructive: oklch(0.5940 0.0443 196.0233);
-      --destructive-foreground: oklch(0.1797 0.0043 308.1928);
-      --border: oklch(0.2520 0 0);
-      --input: oklch(0.2520 0 0);
-      --ring: oklch(0.7214 0.1337 49.9802);
-      --chart-1: oklch(0.5940 0.0443 196.0233);
-      --chart-2: oklch(0.7214 0.1337 49.9802);
-      --chart-3: oklch(0.8721 0.0864 68.5474);
-      --chart-4: oklch(0.6268 0 0);
-      --chart-5: oklch(0.6830 0 0);
-      --shadow: 0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
-    }
-
-    body {
-      font-family: var(--font-sans);
-      letter-spacing: var(--tracking-normal);
-      background: var(--background);
-      color: var(--foreground);
-      padding: 24px;
-    }
-
-    .page {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 22px;
-    }
-
-    .header {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 6px 4px 0;
-    }
-
-    .titleRow {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .title {
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: -0.2px;
-    }
-
-    .subtitle {
-      font-size: 12px;
-      color: var(--muted-foreground);
-      line-height: 1.35;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 22px;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px;
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .top {
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      align-items: flex-start;
-    }
-
-    .meta {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .name {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--card-foreground);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .price {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--card-foreground);
-      white-space: nowrap;
-    }
-
-    .code {
-      font-size: 11px;
-      color: var(--muted-foreground);
-      opacity: 0.9;
-      word-break: break-word;
-    }
-
-    .actionsRow {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .stats {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      color: var(--muted-foreground);
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .btn {
-      appearance: none;
-      border: 1px solid color-mix(in oklab, var(--primary) 55%, var(--border) 45%);
-      background: color-mix(in oklab, var(--primary) 18%, var(--card) 82%);
-      color: var(--foreground);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 120ms ease;
-      white-space: nowrap;
-      font-family: var(--font-ui);
-    }
-
-    .btn:hover {
-      background: color-mix(in oklab, var(--primary) 22%, var(--card) 78%);
-    }
-
-    .chart {
-      height: 168px;
-      margin-top: 4px;
-      padding-top: 4px;
-    }
-
-    canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    .empty {
-      text-align: center;
-      color: var(--muted-foreground);
-      margin-top: 40px;
-      font-size: 13px;
-    }
-
-    #empty {
-      display: none;
-    }
-  </style>
 </head>
 
-<body class="dark">
+<body>
 
-<div class="page">
-  <div class="header">
-    <div class="titleRow">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(135deg, oklch(0.7214 0.1337 49.9802) 0%, oklch(0.5 0.1 49.9802) 100%); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; color: oklch(0.1797 0.0043 308.1928);">T</div>
-        <div class="title">TruePrice Dashboard</div>
+<!-- Inline SVG icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-spark" viewBox="0 0 24 24">
+      <path d="M12 2v20M2 12h20M5 5l14 14M19 5 5 19"/>
+    </symbol>
+    <symbol id="i-shapes" viewBox="0 0 24 24">
+      <circle cx="7.5" cy="16.5" r="3.5"/><rect x="13" y="3.5" width="7" height="7" rx="1.5"/><path d="m7.5 4 3.5 6H4z"/>
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+    </symbol>
+    <symbol id="i-brief" viewBox="0 0 24 24">
+      <rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/>
+    </symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 24 24">
+      <path d="M7 17L17 7M7 7h10v10"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="dashboard-app app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar__header">
+      <div class="avatar avatar--accent">T</div>
+      <span class="sidebar__brand">TruePrice</span>
+    </div>
+
+    <div class="search" style="margin-bottom: 12px;">
+      <svg class="icon icon--sm search__icon"><use href="#i-search"/></svg>
+      <input class="input" type="search" id="searchInput" placeholder="Search tracked items..." aria-label="Search products" />
+    </div>
+
+    <div class="sidebar__scroll">
+      <nav class="sidebar__group">
+        <a class="nav-item is-active" href="#">
+          <svg class="icon nav-item__icon"><use href="#i-shapes"/></svg>
+          <span class="nav-item__text">Tracked Products</span>
+          <span class="badge badge--accent" id="sidebarProductCount">0</span>
+        </a>
+        <a class="nav-item" href="https://www.ebay.com" target="_blank" rel="noopener noreferrer">
+          <svg class="icon nav-item__icon"><use href="#i-brief"/></svg>
+          <span class="nav-item__text">Browse eBay</span>
+          <svg class="icon icon--sm text-faint" style="margin-left:auto;"><use href="#i-arrow-up-right"/></svg>
+        </a>
+      </nav>
+
+      <div class="sidebar__group" style="margin-top: auto; padding-top: 16px;">
+        <div class="card" style="padding: 12px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: none;">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+            <span class="footerDot dot-green" style="margin:0;"></span>
+            <span style="font-size: 11px; font-weight: 600; color: var(--color-text);">Consensus Active</span>
+          </div>
+          <p class="text-muted text-xs" style="line-height: 1.4;">Reputation-weighted prices computed with Byzantine fault tolerance.</p>
+        </div>
       </div>
     </div>
-    <div class="subtitle">Your tracked eBay products with reputation-weighted price history. Hover charts to see exact prices.</div>
-  </div>
 
-  <div id="grid" class="grid"></div>
-  <div id="empty" class="empty">No tracked products yet.</div>
+    <div class="sidebar__footer">
+      <span class="text-xs text-muted">TruePrice v2.0</span>
+      <span class="badge">BFT</span>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="dashboard-container">
+
+      <!-- Header Section -->
+      <section class="dashboard-header">
+        <div class="pill">
+          <span>eBay Price Intelligence</span>
+          <span class="pill__dot">·</span>
+          <span>Consensus Engine</span>
+        </div>
+
+        <h1 class="dashboard-title">
+          <svg class="icon"><use href="#i-spark"/></svg>
+          Tracked Products
+        </h1>
+        <p class="dashboard-subtitle">
+          Market prices aggregated across client observations with Byzantine-fault-tolerant consensus. Hover over any chart point to inspect exact dates and prices.
+        </p>
+      </section>
+
+      <!-- Toolbar -->
+      <div class="dashboard-toolbar">
+        <div class="tabs" role="tablist">
+          <button class="tab is-active" role="tab">All Products (<span id="tabCount">0</span>)</button>
+        </div>
+        <div class="row" style="gap: 8px;">
+          <span class="badge badge-neutral" id="statusMessage">Syncing...</span>
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div id="grid" class="grid grid--dashboard"></div>
+
+      <!-- Empty State -->
+      <div id="empty" class="card empty-card" style="display:none;"></div>
+
+    </div>
+  </main>
 </div>
 
 <script src="dashboard.js"></script>
