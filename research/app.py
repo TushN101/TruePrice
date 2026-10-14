@@ -231,10 +231,5 @@ def get_history_json(run_id: str):
         "sleeper_activation_tick": engine.config.sleeper_activation_tick,
     })
 
-
-def create_app():
-    return app
-
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5050, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
